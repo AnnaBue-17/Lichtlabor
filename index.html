@@ -14,7 +14,8 @@ main{max-width:1050px;margin:auto;padding:18px}
 h2{color:var(--cyan)}h3{margin-top:0}
 .panel{background:var(--panel);border:1px solid #34516c;border-radius:14px;padding:17px;margin:13px 0}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-button,input,textarea{font:inherit;color:var(--text);background:#183650;border:1px solid #52718c;border-radius:9px;padding:10px}
+button,input,textarea,select{font:inherit;color:var(--text);background:#183650;border:1px solid #52718c;border-radius:9px;padding:10px}
+input[type="range"]{padding:0;accent-color:var(--cyan);width:100%;max-width:420px;display:block;margin-bottom:8px}
 button{cursor:pointer}button:hover{background:#285577}
 button:disabled{opacity:.4;cursor:not-allowed}
 .primary{background:#087d9a;border-color:var(--cyan)}
@@ -34,6 +35,9 @@ canvas{display:block;width:100%;height:auto;background:#061321;border:1px solid 
 .hidden{display:none!important}.good{color:var(--green)}.warn{color:var(--yellow)}
 .small{font-size:13px;color:var(--muted)}
 #saveStatus{font-size:12px;color:var(--green)}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+th,td{border-bottom:1px solid #2b4a66;padding:7px 10px;text-align:left}
+th{color:var(--cyan)}
 footer{text-align:center;color:var(--muted);padding:25px}
 </style>
 </head>
@@ -79,23 +83,31 @@ footer{text-align:center;color:var(--muted);padding:25px}
 
 <script>
 const STORAGE_KEY="mission-lichtlabor-progress-v4";
-const emptyState={completed:[],mazeDone:[],notes:{},measurements:[]};
+const emptyState={completed:[],mazeDone:[],notes:{},reflectionTrials:[],refractionTrials:[]};
 let state=loadState(),current=0,canvas=null,ctx=null,objects=[],selected=null;
 let mode="reflection",pointerMode="",lastPoint=null,mazeIndex=0,mazeSolved=false;
-let slabAngle=0,raySegments=[];
+let raySegments=[];
 let reflectionAngle=30,mirrorAngle=0;
 let refractionAngle=30,glassIndex=1.5;
 let refractionDirection="airGlass";
-let reflectionTrials=[];
-let refractionTrials=[];
+let reflectionTrials=state.reflectionTrials||[];
+let refractionTrials=state.refractionTrials||[];
 
 function loadState(){
-  try{return {...emptyState,...JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}")}}
-  catch(e){return {...emptyState}}
+  try{
+    const parsed=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");
+    return {...emptyState,...parsed,notes:parsed.notes||{}};
+  }catch(e){return {...emptyState}}
 }
 function save(){
-  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));document.getElementById("saveStatus").textContent="✓ Gespeichert auf diesem Gerät"}
-  catch(e){document.getElementById("saveStatus").textContent="Speichern nicht möglich"}
+  state.reflectionTrials=reflectionTrials;
+  state.refractionTrials=refractionTrials;
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    document.getElementById("saveStatus").textContent="✓ Gespeichert auf diesem Gerät";
+  }catch(e){
+    document.getElementById("saveStatus").textContent="Speichern nicht möglich";
+  }
   updateHeader();
 }
 function updateHeader(){
@@ -135,28 +147,30 @@ function showMission(n){
   const done=state.completed.includes(n);
   const pages=[page1,page2,page3,page4,page5,page6];
   document.getElementById("content").innerHTML=pages[n-1](done);
-  if(n===1||n===2)restoreNotes(n);
-  if(n===3){mode="reflection";initObjects();makeCanvas("reflectionCanvas");draw();}
-  if(n===4){mode="refraction";slabAngle=0;makeCanvas("refractionCanvas");drawRefraction();}
+  if(n===1||n===2||n===3)restoreNotes(n);
+  if(n===3){mode="reflection";renderReflection();}
+  if(n===4){mode="refraction";restorePage4();renderRefraction();}
   if(n===5){mode="maze";mazeIndex=0;renderMaze();}
   if(n===6){mode="free";initObjects(true);makeCanvas("freeCanvas");draw();restoreFree();}
 }
 function explain(title,text){
   return `<div class="panel"><h3 class="good">✓ Mission abgeschlossen – das hast du herausgefunden</h3><h3>${title}</h3><p>${text}</p></div>`;
 }
+
 function page1(done){return `
 <h2>Mission 1 – Lichtdetektive 🔦</h2><div class="panel">
 <p>Finde heraus, wo Licht herkommt und wie es sich ausbreitet.</p>
 <p>Welche Dinge senden selbst Licht aus?</p>
 <div class="answer">
-<label><input type="checkbox" id="m1a"> Die Sonne sendet selbst Licht aus.</label>
+<label><input type="checkbox" id="m1a" ${done?"checked":""}> Die Sonne sendet selbst Licht aus.</label>
 <label><input type="checkbox" id="m1b"> Ein beleuchteter Tisch sendet selbst Licht aus.</label>
-<label><input type="checkbox" id="m1c"> Eine eingeschaltete Lampe sendet selbst Licht aus.</label>
+<label><input type="checkbox" id="m1c" ${done?"checked":""}> Eine eingeschaltete Lampe sendet selbst Licht aus.</label>
 <label><input type="checkbox" id="m1d"> Der Mond leuchtet aus eigener Kraft.</label>
 </div>
 <label>Deine Vermutung: Wie breitet sich Licht aus?</label><textarea id="m1note" placeholder="Ich vermute ..."></textarea>
 <button class="primary" onclick="check1()">Forschungsergebnis einreichen</button><p id="f1"></p></div>
 ${done?explain("Lichtquellen und Lichtausbreitung","Lichtquellen senden selbst Licht aus. In einem gleichmäßigen, durchsichtigen Stoff breitet sich Licht geradlinig aus. Lichtstrahlen sind ein Modell, um die Ausbreitungsrichtung darzustellen."):""}`}
+
 function page2(done){return `
 <h2>Mission 2 – Das Geheimnis der Materialien 🧪</h2><div class="panel">
 <p>Was geschieht, wenn Licht auf unterschiedliche Materialien trifft?</p>
@@ -170,18 +184,18 @@ function page2(done){return `
 <label>Was beobachtest du bei Spiegel, Papier und Glas?</label><textarea id="m2note"></textarea>
 <button class="primary" onclick="check2()">Ergebnis einreichen</button><p id="f2"></p></div>
 ${done?explain("Licht und Materialien","An glatten Flächen kann gerichtete Reflexion auftreten. Raue Flächen streuen Licht. Manche Stoffe absorbieren Licht, andere lassen es ganz oder teilweise hindurch. Diese Vorgänge können gleichzeitig auftreten."):""}`}
-function page3(done){return `
+
 function page3(done){return `
 <h2>Mission 3 – Spiegel-Forschung 🪞</h2>
 <div class="panel">
   <p>Finde selbst heraus, wie sich ein Lichtstrahl an einem ebenen Spiegel verhält.</p>
   <p>Verändere den Einfallswinkel und drehe den Spiegel. Beobachte, wie sich der reflektierte Strahl verändert.</p>
 
-  <label for="reflectionAngle">Einfallswinkel: <strong id="reflectionAngleValue">30°</strong></label>
-  <input id="reflectionAngle" type="range" min="0" max="80" value="30" oninput="reflectionAngle=Number(this.value);renderReflection()">
+  <label for="reflectionAngle">Einfallswinkel: <strong id="reflectionAngleValue">${reflectionAngle}°</strong></label>
+  <input id="reflectionAngle" type="range" min="0" max="80" value="${reflectionAngle}" oninput="reflectionAngle=Number(this.value);renderReflection()">
 
-  <label for="mirrorAngle">Spiegel drehen: <strong id="mirrorAngleValue">0°</strong></label>
-  <input id="mirrorAngle" type="range" min="-60" max="60" value="0" oninput="mirrorAngle=Number(this.value);renderReflection()">
+  <label for="mirrorAngle">Spiegel drehen: <strong id="mirrorAngleValue">${mirrorAngle}°</strong></label>
+  <input id="mirrorAngle" type="range" min="-60" max="60" value="${mirrorAngle}" oninput="mirrorAngle=Number(this.value);renderReflection()">
 
   <div id="reflectionCanvas"></div>
   <div id="reflectionReadout" class="answer"></div>
@@ -201,28 +215,28 @@ function page3(done){return `
 </div>
 ${done?explain("Das Reflexionsgesetz","Der Einfallswinkel ist gleich dem Reflexionswinkel. Beide Winkel werden zum Lot gemessen – also zur Senkrechten auf die Spiegeloberfläche. Einfallender Strahl, Lot und reflektierter Strahl liegen in einer Ebene."):""}
 `}
-function page4(done){return `
+
 function page4(done){return `
 <h2>Mission 4 – Linsen und Lichtbrechung 🔍</h2>
 <div class="panel">
   <p>Untersuche, wie sich ein Lichtstrahl verändert, wenn er von einem Stoff in einen anderen übergeht.</p>
   <p>Stelle verschiedene Einfallswinkel und Materialien ein. Beobachte den Strahl an der Grenzfläche.</p>
 
-  <label for="refractionAngle">Einfallswinkel: <strong id="refractionAngleValue">30°</strong></label>
-  <input id="refractionAngle" type="range" min="0" max="80" value="30" oninput="refractionAngle=Number(this.value);renderRefraction()">
+  <label for="refractionAngle">Einfallswinkel: <strong id="refractionAngleValue">${refractionAngle}°</strong></label>
+  <input id="refractionAngle" type="range" min="0" max="80" value="${refractionAngle}" oninput="refractionAngle=Number(this.value);renderRefraction()">
 
   <label for="glassMaterial">Material</label>
   <select id="glassMaterial" onchange="glassIndex=Number(this.value);renderRefraction()">
-    <option value="1.33">Wasser (n = 1,33)</option>
-    <option value="1.5" selected>Glas (n = 1,50)</option>
-    <option value="1.7">Flintglas (n = 1,70)</option>
-    <option value="2.0">stark brechendes Material (n = 2,00)</option>
+    <option value="1.33" ${glassIndex===1.33?"selected":""}>Wasser (n = 1,33)</option>
+    <option value="1.5" ${glassIndex===1.5?"selected":""}>Glas (n = 1,50)</option>
+    <option value="1.7" ${glassIndex===1.7?"selected":""}>Flintglas (n = 1,70)</option>
+    <option value="2.0" ${glassIndex===2.0?"selected":""}>stark brechendes Material (n = 2,00)</option>
   </select>
 
   <label for="refractionDirection">Lichtrichtung</label>
   <select id="refractionDirection" onchange="refractionDirection=this.value;renderRefraction()">
-    <option value="airGlass">Luft → Material</option>
-    <option value="glassAir">Material → Luft</option>
+    <option value="airGlass" ${refractionDirection==="airGlass"?"selected":""}>Luft → Material</option>
+    <option value="glassAir" ${refractionDirection==="glassAir"?"selected":""}>Material → Luft</option>
   </select>
 
   <div id="refractionCanvas"></div>
@@ -251,13 +265,14 @@ function page4(done){return `
 </div>
 ${done?explain("Brechung und Linsen","Beim Übergang zwischen zwei Stoffen ändert Licht im Allgemeinen seine Richtung. Es gilt das Snelliussche Gesetz: n₁ · sin(α) = n₂ · sin(β). Beim Übergang in ein optisch dichteres Medium wird der Strahl zum Lot hin gebrochen. Eine Sammellinse bündelt parallel einfallende Lichtstrahlen näherungsweise in einem Brennpunkt; eine Zerstreuungslinse lässt sie auseinanderlaufen."):""}
 `}
+
 function page5(done){return `
 <h2>Mission 5 – Die große Lichtlabor-Prüfung 🏆</h2><div class="panel">
 <p>Löse zehn optische Herausforderungen. Verändere die Spiegelstellung, bis der Lichtstrahl das Ziel erreicht.</p>
 <div class="progress"><div id="mazeBar"></div></div><p id="mazeProgress"></p></div>
 <div class="panel"><h3 id="mazeTitle"></h3><p id="mazeDesc"></p>
 <div class="actions"><button onclick="previousMaze()">← Vorherige</button><button onclick="nextMaze()">Nächste →</button><button onclick="renderMaze()">Zurücksetzen</button></div>
-<div id="mazeCanvas"></div><p class="small">Ziehe die Spiegel und drehe sie am gelben Griff. Triff mit dem Strahl das grüne Ziel.</p>
+<div id="mazeCanvas"></div><p class="small">Ziehe die Bauteile und drehe sie am gelben Griff. Triff mit dem Strahl das grüne Ziel.</p>
 <div id="mazeStatus" class="answer"></div>
 <div id="mazeQuestions" class="hidden">
 <h3 class="good">Geschafft! Reflektiere dein Vorgehen.</h3>
@@ -268,6 +283,7 @@ function page5(done){return `
 <button class="success" onclick="saveMazeReflection()">Reflexion speichern und weiter</button>
 </div></div>
 ${done?explain("Prüfung abgeschlossen","Du hast die optischen Herausforderungen bearbeitet und deine Beobachtungen ausgewertet. Nutze deine Erkenntnisse für eigene Experimente."):""}`}
+
 function page6(done){return `
 <h2>Mission 6 – Freie Forschungsmission 🧑‍🔬</h2><div class="panel">
 <p>Du bist jetzt selbst Forscherin oder Forscher. Entwickle eine eigene Fragestellung und baue einen Versuchsaufbau.</p>
@@ -281,169 +297,218 @@ ${done?explain("Dein Forschungsbericht","Du hast eine eigene Forschungsfrage ent
 
 // Aufgabenabschluss
 function check1(){
- const ok=document.getElementById("m1a").checked&&!document.getElementById("m1b").checked&&document.getElementById("m1c").checked&&!document.getElementById("m1d").checked;
- const note=document.getElementById("m1note").value.trim();
- if(!ok||note.length<5){document.getElementById("f1").textContent="Überprüfe deine Auswahl und notiere eine Vermutung.";return}
- state.notes[1]=note;complete(1);
+  const ok=document.getElementById("m1a").checked&&!document.getElementById("m1b").checked&&document.getElementById("m1c").checked&&!document.getElementById("m1d").checked;
+  const note=document.getElementById("m1note").value.trim();
+  if(!ok||note.length<5){document.getElementById("f1").textContent="Überprüfe deine Auswahl und notiere eine Vermutung.";return}
+  state.notes[1]=note;complete(1);
 }
 function check2(){
- const choice=document.querySelector('input[name="mat"]:checked'),note=document.getElementById("m2note").value.trim();
- if(!choice||note.length<5){document.getElementById("f2").textContent="Wähle einen Vorgang und beschreibe deine Beobachtung.";return}
- state.notes[2]=note;complete(2);
+  const choice=document.querySelector('input[name="mat"]:checked'),note=document.getElementById("m2note").value.trim();
+  if(!choice||note.length<5){document.getElementById("f2").textContent="Wähle einen Vorgang und beschreibe deine Beobachtung.";return}
+  state.notes[2]=note;complete(2);
 }
 function restoreNotes(n){const el=document.getElementById("m"+n+"note");if(el&&state.notes[n])el.value=state.notes[n]}
+function restorePage4(){
+  const vals=state.notes[4]||[];
+  ["m4a","m4b","m4c"].forEach((id,i)=>{const el=document.getElementById(id);if(el&&vals[i])el.value=vals[i]});
+}
 function finish3(){
- const note=document.getElementById("m3note").value.trim();
- if(!note||state.measurements.length<1){document.getElementById("f3").textContent="Speichere mindestens eine Messung und notiere deine Vermutung.";return}
- state.notes[3]=note;complete(3);
+  const note=document.getElementById("m3note").value.trim();
+  if(note.length<5||reflectionTrials.length<2){
+    document.getElementById("f3").textContent="Speichere mindestens zwei Messungen und notiere deine Beobachtung.";
+    return;
+  }
+  state.notes[3]=note;complete(3);
 }
 function finish4(){
- const a=document.getElementById("m4a").value.trim(),b=document.getElementById("m4b").value.trim();
- if(a.length<8||b.length<8){document.getElementById("f4").textContent="Beschreibe beide Beobachtungen.";return}
- state.notes[4]=[a,b];complete(4);
+  const a=document.getElementById("m4a").value.trim(),b=document.getElementById("m4b").value.trim(),c=document.getElementById("m4c").value.trim();
+  if(a.length<5||b.length<5||c.length<5){
+    document.getElementById("f4").textContent="Bitte beantworte alle drei Forscherfragen.";
+    return;
+  }
+  state.notes[4]=[a,b,c];complete(4);
 }
 function finish6(){
- const a=document.getElementById("freeQ").value.trim(),b=document.getElementById("freeO").value.trim(),c=document.getElementById("freeC").value.trim();
- if(a.length<8||b.length<8||c.length<8){document.getElementById("freeFeedback").textContent="Bitte fülle alle drei Bereiche aus.";return}
- state.notes.free=[a,b,c];complete(6);
+  const a=document.getElementById("freeQ").value.trim(),b=document.getElementById("freeO").value.trim(),c=document.getElementById("freeC").value.trim();
+  if(a.length<8||b.length<8||c.length<8){document.getElementById("freeFeedback").textContent="Bitte fülle alle drei Bereiche aus.";return}
+  state.notes.free=[a,b,c];complete(6);
 }
 
-// Canvas und optische Bauteile
-function makeCanvas(id){
- const wrap=document.getElementById(id);if(!wrap)return;
- wrap.innerHTML='<canvas width="900" height="500"></canvas>';
- canvas=wrap.querySelector("canvas");ctx=canvas.getContext("2d");
- canvas.addEventListener("pointerdown",pointerDown);
- canvas.addEventListener("pointermove",pointerMove);
- canvas.addEventListener("pointerup",pointerUp);
- canvas.addEventListener("pointercancel",pointerUp);
+// Canvas und optische Bauteile (für Mission 5 & 6)
+function makeCanvas(id,interactive=false){
+  const wrap=document.getElementById(id);if(!wrap)return;
+  wrap.innerHTML='<canvas width="900" height="500"></canvas>';
+  canvas=wrap.querySelector("canvas");ctx=canvas.getContext("2d");
+  if(interactive){
+    canvas.addEventListener("pointerdown",pointerDown);
+    canvas.addEventListener("pointermove",pointerMove);
+    canvas.addEventListener("pointerup",pointerUp);
+    canvas.addEventListener("pointercancel",pointerUp);
+  }
 }
 function initObjects(free=false){
- objects=free?[{type:"mirror",x:470,y:250,a:-30},{type:"lens",x:650,y:250,a:0}]:[{type:"mirror",x:480,y:250,a:-35}];
+  objects=free?[{type:"mirror",x:470,y:250,a:-30},{type:"lens",x:650,y:250,a:0}]:[{type:"mirror",x:480,y:250,a:-35}];
 }
 function addObject(type){
- objects.push({type,x:440+Math.random()*100,y:180+Math.random()*140,a:0});draw();
+  objects.push({type,x:440+Math.random()*100,y:180+Math.random()*140,a:0});draw();
 }
 function resetLab(){initObjects(mode==="free");draw()}
 function rotateSelected(d){
- const o=selected||objects[objects.length-1];if(o){o.a+=d;draw()}
+  const o=selected||objects[objects.length-1];if(o){o.a+=d;draw()}
 }
 function pos(e){
- const r=canvas.getBoundingClientRect();
- return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};
+  const r=canvas.getBoundingClientRect();
+  return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};
 }
 function handle(o){const a=o.a*Math.PI/180;return{x:o.x-Math.sin(a)*48,y:o.y+Math.cos(a)*48}}
 function pointerDown(e){
- const p=pos(e);canvas.setPointerCapture(e.pointerId);selected=null;pointerMode="";
- for(let i=objects.length-1;i>=0;i--){
-  const o=objects[i],h=handle(o);
-  if(Math.hypot(p.x-h.x,p.y-h.y)<20){selected=o;pointerMode="rotate";break}
-  if(Math.hypot(p.x-o.x,p.y-o.y)<48){selected=o;pointerMode="move";break}
- }
- lastPoint=p;
+  const p=pos(e);canvas.setPointerCapture(e.pointerId);selected=null;pointerMode="";
+  for(let i=objects.length-1;i>=0;i--){
+    const o=objects[i],h=handle(o);
+    if(Math.hypot(p.x-h.x,p.y-h.y)<20){selected=o;pointerMode="rotate";break}
+    if(Math.hypot(p.x-o.x,p.y-o.y)<48){selected=o;pointerMode="move";break}
+  }
+  lastPoint=p;
 }
 function pointerMove(e){
- if(!selected)return;const p=pos(e);
- if(pointerMode==="move"){selected.x+=p.x-lastPoint.x;selected.y+=p.y-lastPoint.y}
- else selected.a=Math.atan2(p.x-selected.x,-(p.y-selected.y))*180/Math.PI;
- lastPoint=p;draw();
+  if(!selected)return;const p=pos(e);
+  if(pointerMode==="move"){selected.x+=p.x-lastPoint.x;selected.y+=p.y-lastPoint.y}
+  else selected.a=Math.atan2(p.x-selected.x,-(p.y-selected.y))*180/Math.PI;
+  lastPoint=p;draw();
 }
 function pointerUp(){selected=null;pointerMode=""}
 function grid(){
- ctx.fillStyle="#061321";ctx.fillRect(0,0,900,500);ctx.strokeStyle="#122b40";ctx.lineWidth=1;
- for(let x=0;x<900;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,500);ctx.stroke()}
- for(let y=0;y<500;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(900,y);ctx.stroke()}
+  ctx.fillStyle="#061321";ctx.fillRect(0,0,900,500);ctx.strokeStyle="#122b40";ctx.lineWidth=1;
+  for(let x=0;x<900;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,500);ctx.stroke()}
+  for(let y=0;y<500;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(900,y);ctx.stroke()}
 }
 function line(x1,y1,x2,y2,color="#ffd166",width=3){
- ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()
+  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()
 }
 function drawObject(o){
- const a=o.a*Math.PI/180;ctx.save();ctx.translate(o.x,o.y);ctx.rotate(a);
- if(o.type==="mirror"){
-  line(-55,0,55,0,"#9eeeff",8);line(-55,8,55,8,"#437f9b",2);
- }else if(o.type==="block"){
-  ctx.fillStyle="rgba(100,190,255,.2)";ctx.strokeStyle="#78caff";ctx.lineWidth=3;ctx.fillRect(-55,-40,110,80);ctx.strokeRect(-55,-40,110,80);
- }else{
-  ctx.strokeStyle=o.type==="diverging"?"#f3a4d2":"#77e0e8";ctx.lineWidth=4;ctx.beginPath();
-  if(o.type==="lens"){ctx.moveTo(0,-45);ctx.quadraticCurveTo(28,0,0,45);ctx.quadraticCurveTo(-28,0,0,-45)}
-  else{ctx.moveTo(-12,-45);ctx.quadraticCurveTo(-38,0,-12,45);ctx.lineTo(12,45);ctx.quadraticCurveTo(38,0,12,-45);ctx.closePath()}
-  ctx.stroke();
- }
- ctx.restore();
- const h=handle(o);line(o.x,o.y,h.x,h.y,"#ffd166",2);ctx.fillStyle="#ffd166";ctx.beginPath();ctx.arc(h.x,h.y,9,0,Math.PI*2);ctx.fill();
+  const a=o.a*Math.PI/180;ctx.save();ctx.translate(o.x,o.y);ctx.rotate(a);
+  if(o.type==="mirror"){
+    line(-55,0,55,0,"#9eeeff",8);line(-55,8,55,8,"#437f9b",2);
+  }else if(o.type==="block"){
+    ctx.fillStyle="rgba(100,190,255,.2)";ctx.strokeStyle="#78caff";ctx.lineWidth=3;ctx.fillRect(-55,-40,110,80);ctx.strokeRect(-55,-40,110,80);
+  }else{
+    ctx.strokeStyle=o.type==="diverging"?"#f3a4d2":"#77e0e8";ctx.lineWidth=4;ctx.beginPath();
+    if(o.type==="lens"){ctx.moveTo(0,-45);ctx.quadraticCurveTo(28,0,0,45);ctx.quadraticCurveTo(-28,0,0,-45)}
+    else{ctx.moveTo(-12,-45);ctx.quadraticCurveTo(-38,0,-12,45);ctx.lineTo(12,45);ctx.quadraticCurveTo(38,0,12,-45);ctx.closePath()}
+    ctx.stroke();
+  }
+  ctx.restore();
+  const h=handle(o);line(o.x,o.y,h.x,h.y,"#ffd166",2);ctx.fillStyle="#ffd166";ctx.beginPath();ctx.arc(h.x,h.y,9,0,Math.PI*2);ctx.fill();
 }
 function laser(){
- ctx.fillStyle="#ff6464";ctx.beginPath();ctx.arc(55,250,12,0,Math.PI*2);ctx.fill();
- ctx.fillStyle="#fff";ctx.font="15px Arial";ctx.fillText("Lichtquelle",20,280);
+  ctx.fillStyle="#ff6464";ctx.beginPath();ctx.arc(55,250,12,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#fff";ctx.font="15px Arial";ctx.fillText("Lichtquelle",20,280);
+}
+function intersectSegment(x,y,dx,dy,ax,ay,bx,by){
+  const vx=bx-ax,vy=by-ay,den=dx*vy-dy*vx;
+  if(Math.abs(den)<1e-8)return null;
+  const t=((ax-x)*vy-(ay-y)*vx)/den,u=((ax-x)*dy-(ay-y)*dx)/den;
+  if(t>1.5&&u>=0&&u<=1)return{t,x:x+t*dx,y:y+t*dy};
+  return null;
+}
+function traceSingleRay(startY){
+  let x=70,y=startY,dx=1,dy=0;
+  for(let step=0;step<14;step++){
+    let best=null,bestT=Infinity;
+    for(const o of objects){
+      const a=o.a*Math.PI/180,ux=Math.cos(a),uy=Math.sin(a),nx=-uy,ny=ux;
+      if(o.type==="mirror"){
+        const hit=intersectSegment(x,y,dx,dy,o.x-55*ux,o.y-55*uy,o.x+55*ux,o.y+55*uy);
+        if(hit&&hit.t<bestT){bestT=hit.t;best={...hit,kind:"mirror",nx,ny}}
+      }else if(o.type==="lens"||o.type==="diverging"){
+        // Linsenebene liegt senkrecht zur optischen Achse (ux, uy)
+        const hit=intersectSegment(x,y,dx,dy,o.x-45*nx,o.y-45*ny,o.x+45*nx,o.y+45*ny);
+        if(hit&&hit.t<bestT){bestT=hit.t;best={...hit,kind:o.type,o,ux,uy,nx,ny}}
+      }else if(o.type==="block"){
+        const corners=[
+          {x:o.x-55*ux-40*nx,y:o.y-55*uy-40*ny},
+          {x:o.x+55*ux-40*nx,y:o.y+55*uy-40*ny},
+          {x:o.x+55*ux+40*nx,y:o.y+55*uy+40*ny},
+          {x:o.x-55*ux+40*nx,y:o.y-55*uy+40*ny}
+        ];
+        const normals=[
+          {x:-nx,y:-ny},{x:ux,y:uy},{x:nx,y:ny},{x:-ux,y:-uy}
+        ];
+        for(let e=0;e<4;e++){
+          const c1=corners[e],c2=corners[(e+1)%4];
+          const hit=intersectSegment(x,y,dx,dy,c1.x,c1.y,c2.x,c2.y);
+          if(hit&&hit.t<bestT){bestT=hit.t;best={...hit,kind:"block",nx:normals[e].x,ny:normals[e].y}}
+        }
+      }
+    }
+    if(!best){
+      let t=Infinity;
+      if(dx>0)t=Math.min(t,(900-x)/dx);if(dx<0)t=Math.min(t,(0-x)/dx);
+      if(dy>0)t=Math.min(t,(500-y)/dy);if(dy<0)t=Math.min(t,(0-y)/dy);
+      raySegments.push([x,y,x+dx*t,y+dy*t]);break;
+    }
+    raySegments.push([x,y,best.x,best.y]);
+    if(best.kind==="mirror"){
+      const dot=dx*best.nx+dy*best.ny;
+      dx-=2*dot*best.nx;dy-=2*dot*best.ny;
+    }else if(best.kind==="block"){
+      const entering=(dx*best.nx+dy*best.ny)<0;
+      const n1=entering?1.0:1.5,n2=entering?1.5:1.0;
+      const out=refractVector(dx,dy,n1,n2,best.nx,best.ny);
+      if(out){dx=out.x;dy=out.y}
+      else{const dot=dx*best.nx+dy*best.ny;dx-=2*dot*best.nx;dy-=2*dot*best.ny}
+    }else{
+      // Dünne Linse: Ablenkung proportional zum Abstand h von der optischen Achse
+      const h=(best.x-best.o.x)*best.nx+(best.y-best.o.y)*best.ny;
+      const f=best.kind==="lens"?170:-170;
+      const side=(dx*best.ux+dy*best.uy)>=0?1:-1;
+      const deflection=-h/f;
+      dx+=side*deflection*best.nx;
+      dy+=side*deflection*best.ny;
+      const len=Math.hypot(dx,dy)||1;dx/=len;dy/=len;
+    }
+    x=best.x+dx*2;y=best.y+dy*2;
+  }
 }
 function trace(){
- let x=70,y=250,dx=1,dy=0;raySegments=[];
- for(let step=0;step<10;step++){
-  let best=null,bestT=Infinity;
-  for(const o of objects.filter(o=>o.type==="mirror")){
-   const a=o.a*Math.PI/180,ux=Math.cos(a),uy=Math.sin(a);
-   const ax=o.x-55*ux,ay=o.y-55*uy,vx=110*ux,vy=110*uy;
-   const den=dx*vy-dy*vx;if(Math.abs(den)<1e-8)continue;
-   const t=((ax-x)*vy-(ay-y)*vx)/den,u=((ax-x)*dy-(ay-y)*dx)/den;
-   if(t>1&&u>=0&&u<=1&&t<bestT){bestT=t;best={x:x+t*dx,y:y+t*dy,o}}
+  raySegments=[];
+  // Bei Linsen-Aufgaben in Mission 5 mehrere parallele Strahlen zeigen, damit Bündelung sichtbar wird
+  const hasLens=objects.some(o=>o.type==="lens"||o.type==="diverging");
+  if(hasLens&&(current===5||current===6)){
+    [225,250,275].forEach(y=>traceSingleRay(y));
+  }else{
+    traceSingleRay(250);
   }
-  if(!best){
-   let t=Infinity;
-   if(dx>0)t=Math.min(t,(900-x)/dx);if(dx<0)t=Math.min(t,(0-x)/dx);
-   if(dy>0)t=Math.min(t,(500-y)/dy);if(dy<0)t=Math.min(t,(0-y)/dy);
-   raySegments.push([x,y,x+dx*t,y+dy*t]);break;
-  }
-  raySegments.push([x,y,best.x,best.y]);
-  const a=best.o.a*Math.PI/180,nx=-Math.sin(a),ny=Math.cos(a),dot=dx*nx+dy*ny;
-  dx-=2*dot*nx;dy-=2*dot*ny;x=best.x+dx*.5;y=best.y+dy*.5;
- }
- raySegments.forEach(s=>line(...s,"#ffd166",3));
+  raySegments.forEach(s=>line(...s,"#ffd166",3));
 }
 function draw(){
- if(!ctx)return;grid();laser();trace();objects.forEach(drawObject);
- if(current===5)checkMazeHit();
+  if(!ctx)return;
+  grid();
+  laser();
+  trace();
+  objects.forEach(drawObject);
+  if(current===5){
+    const target=mazes[mazeIndex][3];
+    ctx.fillStyle="rgba(114,224,160,0.22)";
+    ctx.beginPath();ctx.arc(target[0],target[1],22,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle="#72e0a0";ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(target[0],target[1],14,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle="#72e0a0";ctx.font="14px Arial";
+    ctx.fillText("Ziel",target[0]-12,target[1]-22);
+    checkMazeHit();
+  }
 }
 
-// Messwerte
-function saveMeasurement(){
- const a=Number(document.getElementById("angleA").value),b=Number(document.getElementById("angleB").value);
- if(!Number.isFinite(a)||!Number.isFinite(b)||a<0||a>90||b<0||b>90){alert("Bitte Winkel zwischen 0° und 90° eingeben.");return}
- state.measurements.push({a,b});save();renderMeasurements();
-}
-function renderMeasurements(){
- const el=document.getElementById("measurements");if(!el)return;
- el.innerHTML=state.measurements.map((m,i)=>`<p class="small">Messung ${i+1}: Einfallswinkel ${m.a}° · Reflexionswinkel ${m.b}°</p>`).join("");
+// Brechung nach Snellius (Vektorform)
+function refractVector(dx,dy,n1,n2,nx,ny){
+  let cosi=-(dx*nx+dy*ny);
+  if(cosi<0){nx=-nx;ny=-ny;cosi=-cosi}
+  const eta=n1/n2,k=1-eta*eta*(1-cosi*cosi);
+  if(k<0)return null;
+  return{x:eta*dx+(eta*cosi-Math.sqrt(k))*nx,y:eta*dy+(eta*cosi-Math.sqrt(k))*ny};
 }
 
-// Brechung am parallelen Glasblock nach Snellius
-function refract(dx,dy,n1,n2,nx,ny){
- let cosi=-(dx*nx+dy*ny);
- if(cosi<0){nx=-nx;ny=-ny;cosi=-cosi}
- const eta=n1/n2,k=1-eta*eta*(1-cosi*cosi);
- if(k<0)return null;
- return{x:eta*dx+(eta*cosi-Math.sqrt(k))*nx,y:eta*dy+(eta*cosi-Math.sqrt(k))*ny};
-}
-function changeSlab(d){slabAngle=Math.max(-60,Math.min(60,slabAngle+d));drawRefraction()}
-function drawRefraction(){
- if(!ctx)return;grid();
- const a=slabAngle*Math.PI/180,ux=Math.cos(a),uy=Math.sin(a),nx=-uy,ny=ux,cx=460,cy=250,L=150;
- const p1={x:cx-nx*L,y:cy-ny*L},p2={x:cx+nx*L,y:cy+ny*L};
- const p3={x:p1.x+ux*130,y:p1.y+uy*130},p4={x:p2.x+ux*130,y:p2.y+uy*130};
- ctx.fillStyle="rgba(65,160,220,.18)";ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.lineTo(p4.x,p4.y);ctx.lineTo(p3.x,p3.y);ctx.closePath();ctx.fill();
- line(p1.x,p1.y,p2.x,p2.y,"#8bdcff",4);line(p3.x,p3.y,p4.x,p4.y,"#8bdcff",4);
- const start={x:cx-ux*300,y:cy-uy*300};line(start.x,start.y,cx,cy);
- const inside=refract(ux,uy,1,1.5,nx,ny);
- if(inside){
-  const exit={x:cx+ux*130,y:cy+uy*130};line(cx,cy,exit.x,exit.y);
-  const out=refract(inside.x,inside.y,1.5,1,-nx,-ny);
-  if(out)line(exit.x,exit.y,exit.x+out.x*260,exit.y+out.y*260);
-  const angle=Math.acos(Math.min(1,Math.abs(inside.x*nx+inside.y*ny)))*180/Math.PI;
-  document.getElementById("refractionText").textContent="Einfallswinkel: "+Math.abs(slabAngle)+"°. Brechungswinkel im Glas: "+angle.toFixed(1)+"°. Beim Übergang von Luft in Glas wird der Strahl zum Lot hin gebrochen.";
- }
- ctx.fillStyle="#fff";ctx.font="16px Arial";ctx.fillText("Luft",60,60);ctx.fillText("Glas · n = 1,5",cx+15,cy+35);
-}
-
-// Zehn Abschluss-Labyrinthe
+// Zehn Abschluss-Labyrinthe (Mission 5)
 const mazes=[
  ["1. Der erste Spiegel","Lenke den Strahl zum Ziel.",1,[700,150],-20],
  ["2. Ein anderer Winkel","Finde eine neue Spiegelstellung.",1,[700,350],20],
@@ -451,68 +516,69 @@ const mazes=[
  ["4. Zwei Spiegel","Nutze zwei Spiegel.",2,[720,220],30],
  ["5. Die Lichtkurve","Experimentiere mit mehreren Reflexionen.",2,[700,420],-55],
  ["6. Das Spiegel-Labyrinth","Verändere die Ausrichtung der Spiegel.",2,[780,100],45],
- ["7. Das Glas-Labyrinth","Untersuche den Lichtweg durch Glas.",1,[700,250],0],
- ["8. Die Sammellinse","Untersuche, wie Linsen Licht bündeln.",1,[700,250],0],
- ["9. Spiegel und Glas","Kombiniere optische Bauteile.",2,[720,330],-30],
+ ["7. Das Glas-Labyrinth","Beobachte den Parallelversatz durch den Glasblock und triff das Ziel.",1,[760,295],0],
+ ["8. Die Sammellinse","Positioniere die Sammellinse so, dass sich die Strahlen im Ziel bündeln.",0,[600,250],0],
+ ["9. Spiegel und Glas","Kombiniere Glasblock und Spiegel.",2,[720,330],-30],
  ["10. Die Meisterprüfung","Finde deinen eigenen Weg zum Ziel.",3,[760,130],35]
 ];
 function renderMaze(){
- const m=mazes[mazeIndex];mazeSolved=state.mazeDone.includes(mazeIndex);
- document.getElementById("mazeTitle").textContent=m[0];document.getElementById("mazeDesc").textContent=m[1];
- document.getElementById("mazeBar").style.width=(state.mazeDone.length/10*100)+"%";
- document.getElementById("mazeProgress").textContent=state.mazeDone.length+" von 10 Aufgaben gelöst";
- objects=[];
- if(mazeIndex===6||mazeIndex===8||mazeIndex===9)objects.push({type:"block",x:430,y:250,a:0});
- if(mazeIndex===7)objects.push({type:"lens",x:430,y:250,a:0});
- for(let j=0;j<m[2];j++)objects.push({type:"mirror",x:380+j*150,y:250+(j%2?90:-50),a:m[4]+j*35});
- makeCanvas("mazeCanvas");draw();
- document.getElementById("mazeStatus").textContent=mazeSolved?"✓ Bereits gelöst. Du kannst erneut experimentieren.":"Drehe und verschiebe die Spiegel. Triff das grüne Ziel.";
- document.getElementById("mazeQuestions").classList.toggle("hidden",!mazeSolved);
- restoreMazeQuestions();
+  const m=mazes[mazeIndex];mazeSolved=state.mazeDone.includes(mazeIndex);
+  document.getElementById("mazeTitle").textContent=m[0];document.getElementById("mazeDesc").textContent=m[1];
+  document.getElementById("mazeBar").style.width=(state.mazeDone.length/10*100)+"%";
+  document.getElementById("mazeProgress").textContent=state.mazeDone.length+" von 10 Aufgaben gelöst";
+  objects=[];
+  if(mazeIndex===6||mazeIndex===8||mazeIndex===9)objects.push({type:"block",x:330,y:250,a:25});
+  if(mazeIndex===7)objects.push({type:"lens",x:350,y:250,a:0});
+  for(let j=0;j<m[2];j++)objects.push({type:"mirror",x:440+j*130,y:250+(j%2?90:-50),a:m[4]+j*35});
+  makeCanvas("mazeCanvas",true);draw();
+  document.getElementById("mazeStatus").textContent=mazeSolved?"✓ Bereits gelöst. Du kannst erneut experimentieren.":"Drehe und verschiebe die Bauteile. Triff das grüne Ziel.";
+  document.getElementById("mazeQuestions").classList.toggle("hidden",!mazeSolved);
+  restoreMazeQuestions();
 }
 function distance(px,py,s){
- const [x1,y1,x2,y2]=s,dx=x2-x1,dy=y2-y1,t=Math.max(0,Math.min(1,((px-x1)*dx+(py-y1)*dy)/(dx*dx+dy*dy||1)));
- return Math.hypot(px-x1-t*dx,py-y1-t*dy);
+  const [x1,y1,x2,y2]=s,dx=x2-x1,dy=y2-y1,t=Math.max(0,Math.min(1,((px-x1)*dx+(py-y1)*dy)/(dx*dx+dy*dy||1)));
+  return Math.hypot(px-x1-t*dx,py-y1-t*dy);
 }
 function checkMazeHit(){
- if(current!==5)return;
- const target=mazes[mazeIndex][3],hit=raySegments.some(s=>distance(target[0],target[1],s)<24);
- if(hit&&!mazeSolved){
-  mazeSolved=true;document.getElementById("mazeStatus").textContent="✓ Ziel getroffen! Beantworte die Reflexionsfragen.";
-  document.getElementById("mazeQuestions").classList.remove("hidden");
- }
+  if(current!==5)return;
+  const target=mazes[mazeIndex][3],hit=raySegments.some(s=>distance(target[0],target[1],s)<22);
+  if(hit&&!mazeSolved){
+    mazeSolved=true;document.getElementById("mazeStatus").textContent="✓ Ziel getroffen! Beantworte die Reflexionsfragen.";
+    document.getElementById("mazeQuestions").classList.remove("hidden");
+  }
 }
 function previousMaze(){mazeIndex=Math.max(0,mazeIndex-1);renderMaze()}
 function nextMaze(){
- if(!state.mazeDone.includes(mazeIndex)){alert("Schließe zuerst diese Aufgabe ab.");return}
- if(mazeIndex<9){mazeIndex++;renderMaze()}
+  if(!state.mazeDone.includes(mazeIndex)){alert("Schließe zuerst diese Aufgabe ab.");return}
+  if(mazeIndex<9){mazeIndex++;renderMaze()}
 }
 function saveMazeReflection(){
- const vals=["q1","q2","q3","q4"].map(id=>document.getElementById(id).value.trim());
- if(vals.some(v=>v.length<3)){alert("Bitte beantworte alle vier Fragen.");return}
- state.notes["maze"+mazeIndex]=vals;
- if(!state.mazeDone.includes(mazeIndex))state.mazeDone.push(mazeIndex);
- save();
- if(state.mazeDone.length===10)complete(5);else{document.getElementById("mazeStatus").textContent="Reflexion gespeichert. Du kannst zur nächsten Aufgabe wechseln.";renderMaze()}
+  const vals=["q1","q2","q3","q4"].map(id=>document.getElementById(id).value.trim());
+  if(vals.some(v=>v.length<3)){alert("Bitte beantworte alle vier Fragen.");return}
+  state.notes["maze"+mazeIndex]=vals;
+  if(!state.mazeDone.includes(mazeIndex))state.mazeDone.push(mazeIndex);
+  save();
+  if(state.mazeDone.length===10)complete(5);
+  else{document.getElementById("mazeStatus").textContent="Reflexion gespeichert. Du kannst zur nächsten Aufgabe wechseln.";renderMaze()}
 }
 function restoreMazeQuestions(){
- const vals=state.notes["maze"+mazeIndex];if(!vals)return;
- ["q1","q2","q3","q4"].forEach((id,i)=>document.getElementById(id).value=vals[i]||"");
+  const vals=state.notes["maze"+mazeIndex];
+  ["q1","q2","q3","q4"].forEach((id,i)=>document.getElementById(id).value=(vals&&vals[i])||"");
 }
 
-// Freies Forschen
+// Freies Forschen (Mission 6)
 function restoreFree(){
- const vals=state.notes.free||[];
- ["freeQ","freeO","freeC"].forEach((id,i)=>document.getElementById(id).value=vals[i]||"");
+  const vals=state.notes.free||[];
+  ["freeQ","freeO","freeC"].forEach((id,i)=>document.getElementById(id).value=vals[i]||"");
 }
 function saveFree(){
- state.notes.free=["freeQ","freeO","freeC"].map(id=>document.getElementById(id).value);
- save();document.getElementById("freeFeedback").textContent="✓ Deine Notizen wurden gespeichert.";
+  state.notes.free=["freeQ","freeO","freeC"].map(id=>document.getElementById(id).value);
+  save();document.getElementById("freeFeedback").textContent="✓ Deine Notizen wurden gespeichert.";
 }
-// --------------------------------------------------
-// NEUER REFLEXIONSVERSUCH
-// --------------------------------------------------
 
+// --------------------------------------------------
+// REFLEXIONSVERSUCH (Mission 3)
+// --------------------------------------------------
 function renderReflection(){
   if(current!==3)return;
 
@@ -524,7 +590,7 @@ function renderReflection(){
   if(av)av.textContent=reflectionAngle+"°";
   if(mv)mv.textContent=mirrorAngle+"°";
 
-  makeCanvas("reflectionCanvas");
+  makeCanvas("reflectionCanvas",false);
   grid();
 
   const cx=460,cy=300;
@@ -602,40 +668,32 @@ function saveReflectionTrial(){
     reflection:reflectionAngle,
     mirror:mirrorAngle
   });
+  save();
+  renderReflectionMeasurements();
+}
+
+function clearReflectionTrials(){
+  reflectionTrials=[];
+  save();
   renderReflectionMeasurements();
 }
 
 function renderReflectionMeasurements(){
   const el=document.getElementById("reflectionMeasurements");
   if(!el)return;
-
   if(!reflectionTrials.length){
-    el.innerHTML="<p class='small'>Noch keine Messungen gespeichert.</p>";
+    el.innerHTML='<p class="small">Noch keine Messungen gespeichert.</p>';
     return;
   }
-
-  el.innerHTML=`
-    <table style="width:100%;border-collapse:collapse">
-      <tr><th style="text-align:left">Versuch</th><th>Einfallswinkel</th><th>Reflexionswinkel</th></tr>
-      ${reflectionTrials.map((m,i)=>`
-        <tr>
-          <td>${i+1}</td>
-          <td style="text-align:center">${m.incidence.toFixed(1)}°</td>
-          <td style="text-align:center">${m.reflection.toFixed(1)}°</td>
-        </tr>`).join("")}
-    </table>`;
+  el.innerHTML=`<table>
+    <thead><tr><th>Messung</th><th>Einfallswinkel α</th><th>Reflexionswinkel α'</th><th>Spiegelneigung</th></tr></thead>
+    <tbody>${reflectionTrials.map((t,i)=>`<tr><td>#${i+1}</td><td>${t.incidence.toFixed(1)}°</td><td>${t.reflection.toFixed(1)}°</td><td>${t.mirror}°</td></tr>`).join("")}</tbody>
+  </table>`;
 }
 
-function clearReflectionTrials(){
-  reflectionTrials=[];
-  renderReflectionMeasurements();
-}
-
-
 // --------------------------------------------------
-// NEUER BRECHUNGSVERSUCH MIT SNELLIUS-GESETZ
+// BRECHUNGSVERSUCH (Mission 4)
 // --------------------------------------------------
-
 function renderRefraction(){
   if(current!==4)return;
 
@@ -646,185 +704,116 @@ function renderRefraction(){
   const av=document.getElementById("refractionAngleValue");
   if(av)av.textContent=refractionAngle+"°";
 
-  makeCanvas("refractionCanvas");
+  makeCanvas("refractionCanvas",false);
   grid();
 
-  const cx=450;
-  const surfaceY=250;
-  const alpha=refractionAngle*Math.PI/180;
+  const cx=450,cy=250;
+  const fromAir=refractionDirection==="airGlass";
+  const n1=fromAir?1.0:glassIndex;
+  const n2=fromAir?glassIndex:1.0;
 
-  const n1=refractionDirection==="airGlass"?1:glassIndex;
-  const n2=refractionDirection==="airGlass"?glassIndex:1;
-
-  // Snelliussches Gesetz: n1 * sin(alpha) = n2 * sin(beta)
-  const sinBeta=(n1/n2)*Math.sin(alpha);
-  const totalReflection=Math.abs(sinBeta)>1;
-  const beta=totalReflection?Math.PI/2:Math.asin(Math.max(-1,Math.min(1,sinBeta)));
+  // Medien einfärben (oben: Medium 1, unten: Medium 2)
+  ctx.fillStyle=fromAir?"rgba(255,255,255,0.02)":"rgba(75,180,240,0.22)";
+  ctx.fillRect(0,0,900,cy);
+  ctx.fillStyle=fromAir?"rgba(75,180,240,0.22)":"rgba(255,255,255,0.02)";
+  ctx.fillRect(0,cy,900,500-cy);
 
   // Grenzfläche und Lot
-  line(50,surfaceY,850,surfaceY,"#8bdcff",4);
-  line(cx,surfaceY-190,cx,surfaceY+190,"#72e0a0",2);
+  line(40,cy,860,cy,"#8bdcff",3);
+  ctx.setLineDash([7,6]);
+  line(cx,40,cx,460,"#72e0a0",2);
+  ctx.setLineDash([]);
 
-  ctx.fillStyle="#72e0a0";
-  ctx.font="16px Arial";
-  ctx.fillText("Lot",cx+10,surfaceY-160);
+  const alpha=refractionAngle*Math.PI/180;
+  // Einfallender Strahl von oben links nach (cx, cy)
+  const inDir={x:Math.sin(alpha),y:Math.cos(alpha)};
+  line(cx-inDir.x*260,cy-inDir.y*260,cx,cy,"#ffd166",4);
+  drawArrow(cx-inDir.x*110,cy-inDir.y*110,cx,cy,"#ffd166");
 
-  let incident,refracted;
-  const incomingFromTop=refractionDirection==="airGlass";
+  const sinBeta=(n1/n2)*Math.sin(alpha);
+  const textEl=document.getElementById("refractionText");
+  const matName=glassIndex===1.33?"Wasser":glassIndex===1.5?"Glas":glassIndex===1.7?"Flintglas":"Material";
 
-  if(incomingFromTop){
-    incident={x:Math.sin(alpha),y:Math.cos(alpha)};
-    const start={x:cx-incident.x*220,y:surfaceY-incident.y*220};
-    line(start.x,start.y,cx,surfaceY,"#ffd166",4);
-    drawArrow(start.x,start.y,cx,surfaceY,"#ffd166");
-
-    if(totalReflection){
-      const reflected={x:Math.sin(alpha),y:-Math.cos(alpha)};
-      line(cx,surfaceY,cx+reflected.x*220,surfaceY+reflected.y*220,"#ff9b71",4);
-    }else{
-      refracted={x:Math.sin(beta),y:Math.cos(beta)};
-      line(cx,surfaceY,cx+refracted.x*220,surfaceY+refracted.y*220,"#ffd166",4);
-      drawArrow(cx,surfaceY,cx+refracted.x*100,surfaceY+refracted.y*100,"#ffd166");
+  if(sinBeta>1){
+    // Totalreflexion zurück nach oben rechts
+    const reflDir={x:Math.sin(alpha),y:-Math.cos(alpha)};
+    line(cx,cy,cx+reflDir.x*260,cy+reflDir.y*260,"#ff7b7b",4);
+    drawArrow(cx,cy,cx+reflDir.x*120,cy+reflDir.y*120,"#ff7b7b");
+    if(textEl){
+      textEl.innerHTML=
+        "Einfallswinkel α: <strong>"+refractionAngle.toFixed(1)+"°</strong> · "+
+        "<strong class='warn'>Totalreflexion!</strong><br>"+
+        "<span class='small'>Der Winkel ist größer als der Grenzwinkel. Das Licht verlässt das dichtere Medium nicht mehr, sondern wird vollständig reflektiert.</span>";
     }
-
-    ctx.fillStyle="#ffffff";
-    ctx.fillText("Luft",70,75);
-    ctx.fillText("Material",70,420);
   }else{
-    incident={x:Math.sin(alpha),y:-Math.cos(alpha)};
-    const start={x:cx-incident.x*220,y:surfaceY-incident.y*220};
-    line(start.x,start.y,cx,surfaceY,"#ffd166",4);
-    drawArrow(start.x,start.y,cx,surfaceY,"#ffd166");
-
-    if(totalReflection){
-      const reflected={x:Math.sin(alpha),y:Math.cos(alpha)};
-      line(cx,surfaceY,cx+reflected.x*220,surfaceY+reflected.y*220,"#ff9b71",4);
-    }else{
-      refracted={x:Math.sin(beta),y:-Math.cos(beta)};
-      line(cx,surfaceY,cx+refracted.x*220,surfaceY+refracted.y*220,"#ffd166",4);
-      drawArrow(cx,surfaceY,cx+refracted.x*100,surfaceY+refracted.y*100,"#ffd166");
+    const beta=Math.asin(sinBeta);
+    const betaDeg=beta*180/Math.PI;
+    const outDir={x:Math.sin(beta),y:Math.cos(beta)};
+    line(cx,cy,cx+outDir.x*260,cy+outDir.y*260,"#ffd166",4);
+    drawArrow(cx,cy,cx+outDir.x*120,cy+outDir.y*120,"#ffd166");
+    if(textEl){
+      const hint=refractionAngle===0
+        ?"Bei senkrechtem Einfall (0°) wird der Strahl nicht abgelenkt."
+        :(fromAir?"Beim Übergang in das optisch dichtere Medium wird der Strahl zum Lot hin gebrochen."
+                 :"Beim Übergang in Luft wird der Strahl vom Lot weg gebrochen.");
+      textEl.innerHTML=
+        "Einfallswinkel α: <strong>"+refractionAngle.toFixed(1)+"°</strong> · "+
+        "Brechungswinkel β: <strong>"+betaDeg.toFixed(1)+"°</strong><br>"+
+        "<span class='small'>"+hint+"</span>";
     }
-
-    ctx.fillStyle="#ffffff";
-    ctx.fillText("Material",70,75);
-    ctx.fillText("Luft",70,420);
   }
 
-  const readout=document.getElementById("refractionText");
-
-  if(totalReflection){
-    readout.innerHTML=
-      "<strong class='warn'>Totalreflexion!</strong><br>"+
-      "Bei diesen Einstellungen kann kein gebrochener Strahl in das zweite Medium austreten. Das Licht wird vollständig zurückgeworfen.<br>"+
-      "<span class='small'>Verkleinere den Einfallswinkel und beobachte, wann wieder ein gebrochener Strahl entsteht.</span>";
-  }else{
-    readout.innerHTML=
-      "Einfallswinkel: <strong>"+refractionAngle.toFixed(1)+"°</strong><br>"+
-      "Brechungswinkel: <strong>"+(beta*180/Math.PI).toFixed(1)+"°</strong><br>"+
-      "Brechungsindex des ersten Mediums: <strong>"+n1.toFixed(2)+"</strong><br>"+
-      "Brechungsindex des zweiten Mediums: <strong>"+n2.toFixed(2)+"</strong><br>"+
-      "<span class='small'>Vergleiche die Winkel. Ändere danach das Material und wiederhole den Versuch.</span>";
-  }
-
+  // Auftreffpunkt & Beschriftung
   ctx.fillStyle="#ffffff";
-  ctx.font="15px Arial";
-  ctx.fillText("Grenzfläche",cx+15,surfaceY-10);
+  ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.fill();
 
-  renderRefractionMeasurements(beta,totalReflection);
+  ctx.font="16px Arial";
+  ctx.fillStyle="#ffffff";
+  ctx.fillText(fromAir?"Luft (n = 1,00)":`${matName} (n = ${glassIndex.toFixed(2)})`,35,38);
+  ctx.fillText(fromAir?`${matName} (n = ${glassIndex.toFixed(2)})`:"Luft (n = 1,00)",35,478);
+  ctx.fillStyle="#72e0a0";
+  ctx.fillText("Lot",cx+12,62);
+
+  renderRefractionMeasurements();
 }
 
 function saveRefractionTrial(){
-  const alpha=refractionAngle*Math.PI/180;
-  const n1=refractionDirection==="airGlass"?1:glassIndex;
-  const n2=refractionDirection==="airGlass"?glassIndex:1;
-  const s=(n1/n2)*Math.sin(alpha);
-  const total=Math.abs(s)>1;
-
+  const fromAir=refractionDirection==="airGlass";
+  const n1=fromAir?1.0:glassIndex;
+  const n2=fromAir?glassIndex:1.0;
+  const sinBeta=(n1/n2)*Math.sin(refractionAngle*Math.PI/180);
+  const betaText=sinBeta>1?"Totalreflexion":(Math.asin(sinBeta)*180/Math.PI).toFixed(1)+"°";
   refractionTrials.push({
-    material:glassIndex,
-    direction:refractionDirection,
-    incidence:refractionAngle,
-    refraction:total?null:Math.asin(s)*180/Math.PI,
-    totalReflection:total
+    direction:fromAir?"Luft → Material":"Material → Luft",
+    n:glassIndex.toFixed(2),
+    alpha:refractionAngle.toFixed(1)+"°",
+    beta:betaText
   });
+  save();
+  renderRefractionMeasurements();
+}
 
+function clearRefractionTrials(){
+  refractionTrials=[];
+  save();
   renderRefractionMeasurements();
 }
 
 function renderRefractionMeasurements(){
   const el=document.getElementById("refractionMeasurements");
   if(!el)return;
-
   if(!refractionTrials.length){
-    el.innerHTML="<p class='small'>Noch keine Messungen gespeichert.</p>";
+    el.innerHTML='<p class="small">Noch keine Messungen gespeichert.</p>';
     return;
   }
-
-  el.innerHTML=`
-    <table style="width:100%;border-collapse:collapse">
-      <tr>
-        <th>Versuch</th><th>Material</th><th>Einfallswinkel</th><th>Brechungswinkel</th>
-      </tr>
-      ${refractionTrials.map((m,i)=>`
-        <tr>
-          <td>${i+1}</td>
-          <td>${m.material.toFixed(2)}</td>
-          <td style="text-align:center">${m.incidence.toFixed(1)}°</td>
-          <td style="text-align:center">${m.totalReflection?"Totalreflexion":m.refraction.toFixed(1)+"°"}</td>
-        </tr>`).join("")}
-    </table>`;
+  el.innerHTML=`<table>
+    <thead><tr><th>Messung</th><th>Richtung</th><th>Brechzahl n</th><th>Einfallswinkel α</th><th>Brechungswinkel β</th></tr></thead>
+    <tbody>${refractionTrials.map((t,i)=>`<tr><td>#${i+1}</td><td>${t.direction}</td><td>${t.n}</td><td>${t.alpha}</td><td>${t.beta}</td></tr>`).join("")}</tbody>
+  </table>`;
 }
 
-function clearRefractionTrials(){
-  refractionTrials=[];
-  renderRefractionMeasurements();
-}
-if(n===3){
-  mode="reflection";
-  reflectionAngle=30;
-  mirrorAngle=0;
-  reflectionTrials=[];
-  renderReflection();
-}
-if(n===4){
-  mode="refraction";
-  refractionAngle=30;
-  glassIndex=1.5;
-  refractionDirection="airGlass";
-  refractionTrials=[];
-  renderRefraction();
-}
-  function finish3(){
-  const note=document.getElementById("m3note").value.trim();
-
-  if(!note||reflectionTrials.length<2){
-    document.getElementById("f3").textContent=
-      "Speichere mindestens zwei Messungen mit unterschiedlichen Einfallswinkeln und notiere deine Vermutung.";
-    return;
-  }
-
-  state.notes[3]=note;
-  state.notes.reflectionTrials=reflectionTrials;
-  complete(3);
-}
-function finish4(){
-  const a=document.getElementById("m4a").value.trim();
-  const b=document.getElementById("m4b").value.trim();
-  const c=document.getElementById("m4c").value.trim();
-
-  if(a.length<8||b.length<8||c.length<8||refractionTrials.length<2){
-    document.getElementById("f4").textContent=
-      "Speichere mindestens zwei Messungen und beantworte alle drei Forscherfragen ausführlich.";
-    return;
-  }
-
-  state.notes[4]=[a,b,c];
-  state.notes.refractionTrials=refractionTrials;
-  complete(4);
-}
-                     
 // Start
-updateHeader();showHome();
+updateHeader();
 </script>
 </body>
 </html>
