@@ -83,6 +83,11 @@ const emptyState={completed:[],mazeDone:[],notes:{},measurements:[]};
 let state=loadState(),current=0,canvas=null,ctx=null,objects=[],selected=null;
 let mode="reflection",pointerMode="",lastPoint=null,mazeIndex=0,mazeSolved=false;
 let slabAngle=0,raySegments=[];
+let reflectionAngle=30,mirrorAngle=0;
+let refractionAngle=30,glassIndex=1.5;
+let refractionDirection="airGlass";
+let reflectionTrials=[];
+let refractionTrials=[];
 
 function loadState(){
   try{return {...emptyState,...JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}")}}
@@ -166,28 +171,86 @@ function page2(done){return `
 <button class="primary" onclick="check2()">Ergebnis einreichen</button><p id="f2"></p></div>
 ${done?explain("Licht und Materialien","An glatten Flächen kann gerichtete Reflexion auftreten. Raue Flächen streuen Licht. Manche Stoffe absorbieren Licht, andere lassen es ganz oder teilweise hindurch. Diese Vorgänge können gleichzeitig auftreten."):""}`}
 function page3(done){return `
-<h2>Mission 3 – Spiegel-Forschung 🪞</h2><div class="panel">
-<p>Untersuche, wie ein Lichtstrahl an einem ebenen Spiegel reflektiert wird. Verschiebe und drehe den Spiegel.</p>
-<ul><li>Was verändert sich, wenn du den Spiegel drehst?</li><li>Wie hängen einfallender und reflektierter Strahl zusammen?</li><li>Welche Rolle spielt das Lot?</li></ul>
-<p class="warn">Entdecke die Regel erst durch deine eigenen Versuche!</p>
-<div class="actions"><button onclick="addObject('mirror')">+ Spiegel</button><button onclick="rotateSelected(-10)">↶ Drehen</button><button onclick="rotateSelected(10)">↷ Drehen</button><button onclick="resetLab()">Zurücksetzen</button></div>
-<div id="reflectionCanvas"></div><p class="small">Bauteil ziehen. Zum Drehen den gelben Griff bewegen.</p>
-<label>Einfallswinkel (Grad)</label><input id="angleA" type="number" min="0" max="90">
-<label>Reflexionswinkel (Grad)</label><input id="angleB" type="number" min="0" max="90">
-<button onclick="saveMeasurement()">Messung speichern</button><div id="measurements"></div>
-<label>Welche Beziehung vermutest du zwischen den Winkeln?</label><textarea id="m3note"></textarea>
-<button class="primary" onclick="finish3()">Forschung abschließen</button><p id="f3"></p></div>
-${done?explain("Das Reflexionsgesetz","Der Einfallswinkel ist gleich dem Reflexionswinkel. Beide Winkel werden zum Lot gemessen – also zur Senkrechten auf die Spiegeloberfläche. Einfallender Strahl, Lot und reflektierter Strahl liegen in einer Ebene."):""}`}
+function page3(done){return `
+<h2>Mission 3 – Spiegel-Forschung 🪞</h2>
+<div class="panel">
+  <p>Finde selbst heraus, wie sich ein Lichtstrahl an einem ebenen Spiegel verhält.</p>
+  <p>Verändere den Einfallswinkel und drehe den Spiegel. Beobachte, wie sich der reflektierte Strahl verändert.</p>
+
+  <label for="reflectionAngle">Einfallswinkel: <strong id="reflectionAngleValue">30°</strong></label>
+  <input id="reflectionAngle" type="range" min="0" max="80" value="30" oninput="reflectionAngle=Number(this.value);renderReflection()">
+
+  <label for="mirrorAngle">Spiegel drehen: <strong id="mirrorAngleValue">0°</strong></label>
+  <input id="mirrorAngle" type="range" min="-60" max="60" value="0" oninput="mirrorAngle=Number(this.value);renderReflection()">
+
+  <div id="reflectionCanvas"></div>
+  <div id="reflectionReadout" class="answer"></div>
+
+  <h3>Deine Messreihe</h3>
+  <p class="small">Übernimm mehrere Messungen mit unterschiedlichen Einfallswinkeln. Die Winkel werden am Versuch gemessen – du musst sie nicht schätzen.</p>
+  <div class="actions">
+    <button class="primary" onclick="saveReflectionTrial()">Aktuelle Messung speichern</button>
+    <button onclick="clearReflectionTrials()">Messreihe löschen</button>
+  </div>
+  <div id="reflectionMeasurements"></div>
+
+  <label>Was fällt dir bei den Messwerten auf?</label>
+  <textarea id="m3note" placeholder="Ich vermute, dass ..."></textarea>
+  <button class="primary" onclick="finish3()">Forschung abschließen</button>
+  <p id="f3"></p>
+</div>
+${done?explain("Das Reflexionsgesetz","Der Einfallswinkel ist gleich dem Reflexionswinkel. Beide Winkel werden zum Lot gemessen – also zur Senkrechten auf die Spiegeloberfläche. Einfallender Strahl, Lot und reflektierter Strahl liegen in einer Ebene."):""}
+`}
 function page4(done){return `
-<h2>Mission 4 – Linsen und Lichtbrechung 🔍</h2><div class="panel">
-<p>Untersuche, wie Licht seine Richtung verändert, wenn es von Luft in Glas und wieder zurück gelangt.</p>
-<div class="actions"><button onclick="changeSlab(-5)">Winkel −</button><button onclick="changeSlab(5)">Winkel +</button><button onclick="slabAngle=0;drawRefraction()">Zurücksetzen</button></div>
-<div id="refractionCanvas"></div><div id="refractionText" class="answer"></div>
-<p class="small">Das Modell berechnet die Richtungsänderung an parallelen Grenzflächen mit dem Snelliusschen Gesetz.</p>
-<label>Was beobachtest du beim Übergang von Luft in Glas?</label><textarea id="m4a"></textarea>
-<label>Was macht eine Sammellinse mit parallelen Lichtstrahlen?</label><textarea id="m4b"></textarea>
-<button class="primary" onclick="finish4()">Forschung abschließen</button><p id="f4"></p></div>
-${done?explain("Brechung und Linsen","Beim Übergang zwischen zwei Stoffen ändert Licht im Allgemeinen seine Richtung. Es gilt n₁ · sin(α) = n₂ · sin(β). Eine Sammellinse bündelt parallel einfallende Lichtstrahlen näherungsweise in einem Brennpunkt. Eine Zerstreuungslinse lässt sie auseinanderlaufen."):""}`}
+function page4(done){return `
+<h2>Mission 4 – Linsen und Lichtbrechung 🔍</h2>
+<div class="panel">
+  <p>Untersuche, wie sich ein Lichtstrahl verändert, wenn er von einem Stoff in einen anderen übergeht.</p>
+  <p>Stelle verschiedene Einfallswinkel und Materialien ein. Beobachte den Strahl an der Grenzfläche.</p>
+
+  <label for="refractionAngle">Einfallswinkel: <strong id="refractionAngleValue">30°</strong></label>
+  <input id="refractionAngle" type="range" min="0" max="80" value="30" oninput="refractionAngle=Number(this.value);renderRefraction()">
+
+  <label for="glassMaterial">Material</label>
+  <select id="glassMaterial" onchange="glassIndex=Number(this.value);renderRefraction()">
+    <option value="1.33">Wasser (n = 1,33)</option>
+    <option value="1.5" selected>Glas (n = 1,50)</option>
+    <option value="1.7">Flintglas (n = 1,70)</option>
+    <option value="2.0">stark brechendes Material (n = 2,00)</option>
+  </select>
+
+  <label for="refractionDirection">Lichtrichtung</label>
+  <select id="refractionDirection" onchange="refractionDirection=this.value;renderRefraction()">
+    <option value="airGlass">Luft → Material</option>
+    <option value="glassAir">Material → Luft</option>
+  </select>
+
+  <div id="refractionCanvas"></div>
+  <div id="refractionText" class="answer"></div>
+
+  <h3>Deine Messreihe</h3>
+  <p class="small">Verändere den Einfallswinkel und speichere mehrere Messungen. Vergleiche die Werte für verschiedene Materialien.</p>
+  <div class="actions">
+    <button class="primary" onclick="saveRefractionTrial()">Aktuelle Messung speichern</button>
+    <button onclick="clearRefractionTrials()">Messreihe löschen</button>
+  </div>
+  <div id="refractionMeasurements"></div>
+
+  <h3>Forscherfragen</h3>
+  <label>1. Was geschieht beim Übergang von Luft in das Material?</label>
+  <textarea id="m4a" placeholder="Wenn der Einfallswinkel größer wird, ..."></textarea>
+
+  <label>2. Was verändert sich, wenn du ein anderes Material auswählst?</label>
+  <textarea id="m4b" placeholder="Bei einem anderen Material beobachte ich ..."></textarea>
+
+  <label>3. Was passiert beim Übergang vom Material in die Luft?</label>
+  <textarea id="m4c" placeholder="Ich beobachte ..."></textarea>
+
+  <button class="primary" onclick="finish4()">Forschung abschließen</button>
+  <p id="f4"></p>
+</div>
+${done?explain("Brechung und Linsen","Beim Übergang zwischen zwei Stoffen ändert Licht im Allgemeinen seine Richtung. Es gilt das Snelliussche Gesetz: n₁ · sin(α) = n₂ · sin(β). Beim Übergang in ein optisch dichteres Medium wird der Strahl zum Lot hin gebrochen. Eine Sammellinse bündelt parallel einfallende Lichtstrahlen näherungsweise in einem Brennpunkt; eine Zerstreuungslinse lässt sie auseinanderlaufen."):""}
+`}
 function page5(done){return `
 <h2>Mission 5 – Die große Lichtlabor-Prüfung 🏆</h2><div class="panel">
 <p>Löse zehn optische Herausforderungen. Verändere die Spiegelstellung, bis der Lichtstrahl das Ziel erreicht.</p>
@@ -446,7 +509,320 @@ function saveFree(){
  state.notes.free=["freeQ","freeO","freeC"].map(id=>document.getElementById(id).value);
  save();document.getElementById("freeFeedback").textContent="✓ Deine Notizen wurden gespeichert.";
 }
+// --------------------------------------------------
+// NEUER REFLEXIONSVERSUCH
+// --------------------------------------------------
 
+function renderReflection(){
+  if(current!==3)return;
+
+  reflectionAngle=Number(document.getElementById("reflectionAngle")?.value ?? reflectionAngle);
+  mirrorAngle=Number(document.getElementById("mirrorAngle")?.value ?? mirrorAngle);
+
+  const av=document.getElementById("reflectionAngleValue");
+  const mv=document.getElementById("mirrorAngleValue");
+  if(av)av.textContent=reflectionAngle+"°";
+  if(mv)mv.textContent=mirrorAngle+"°";
+
+  makeCanvas("reflectionCanvas");
+  grid();
+
+  const cx=460,cy=300;
+  const a=mirrorAngle*Math.PI/180;
+  const t={x:Math.cos(a),y:Math.sin(a)};
+  const n={x:-Math.sin(a),y:-Math.cos(a)};
+  const q=reflectionAngle*Math.PI/180;
+
+  // Einfallender Strahl: trifft von der Vorderseite auf den Spiegel
+  const d={
+    x:Math.sin(q)*t.x-Math.cos(q)*n.x,
+    y:Math.sin(q)*t.y-Math.cos(q)*n.y
+  };
+
+  // Reflexion am Spiegel: Einfallswinkel = Reflexionswinkel
+  const r={
+    x:Math.sin(q)*t.x+Math.cos(q)*n.x,
+    y:Math.sin(q)*t.y+Math.cos(q)*n.y
+  };
+
+  // Spiegel und Lot
+  line(cx-t.x*150,cy-t.y*150,cx+t.x*150,cy+t.y*150,"#8bdcff",8);
+  line(cx-n.x*120,cy-n.y*120,cx+n.x*120,cy+n.y*120,"#72e0a0",2);
+
+  // Strahlen
+  line(cx-d.x*300,cy-d.y*300,cx,cy,"#ffd166",4);
+  line(cx,cy,cx+r.x*300,cy+r.y*300,"#ffd166",4);
+
+  // Pfeilspitzen
+  drawArrow(cx-d.x*80,cy-d.y*80,cx,cy,"#ffd166");
+  drawArrow(cx,cy,cx+r.x*80,cy+r.y*80,"#ffd166");
+
+  // Auftreffpunkt
+  ctx.fillStyle="#ffffff";
+  ctx.beginPath();
+  ctx.arc(cx,cy,6,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#ffffff";
+  ctx.font="17px Arial";
+  ctx.fillText("Einfallender Strahl",35,35);
+  ctx.fillText("Reflektierter Strahl",620,35);
+  ctx.fillStyle="#72e0a0";
+  ctx.fillText("Lot",cx+12,cy-105);
+  ctx.fillStyle="#8bdcff";
+  ctx.fillText("Spiegel",cx+100,cy+22);
+
+  const readout=document.getElementById("reflectionReadout");
+  if(readout){
+    readout.innerHTML=
+      "Einfallswinkel zum Lot: <strong>"+reflectionAngle.toFixed(1)+"°</strong><br>"+
+      "Reflexionswinkel zum Lot: <strong>"+reflectionAngle.toFixed(1)+"°</strong><br>"+
+      "<span class='small'>Verändere den Winkel oder drehe den Spiegel. Beobachte, wie sich beide Strahlen bewegen.</span>";
+  }
+
+  renderReflectionMeasurements();
+}
+
+function drawArrow(x1,y1,x2,y2,color){
+  const angle=Math.atan2(y2-y1,x2-x1);
+  const size=13;
+  ctx.strokeStyle=color;
+  ctx.lineWidth=3;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-size*Math.cos(angle-0.45),y2-size*Math.sin(angle-0.45));
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-size*Math.cos(angle+0.45),y2-size*Math.sin(angle+0.45));
+  ctx.stroke();
+}
+
+function saveReflectionTrial(){
+  reflectionTrials.push({
+    incidence:reflectionAngle,
+    reflection:reflectionAngle,
+    mirror:mirrorAngle
+  });
+  renderReflectionMeasurements();
+}
+
+function renderReflectionMeasurements(){
+  const el=document.getElementById("reflectionMeasurements");
+  if(!el)return;
+
+  if(!reflectionTrials.length){
+    el.innerHTML="<p class='small'>Noch keine Messungen gespeichert.</p>";
+    return;
+  }
+
+  el.innerHTML=`
+    <table style="width:100%;border-collapse:collapse">
+      <tr><th style="text-align:left">Versuch</th><th>Einfallswinkel</th><th>Reflexionswinkel</th></tr>
+      ${reflectionTrials.map((m,i)=>`
+        <tr>
+          <td>${i+1}</td>
+          <td style="text-align:center">${m.incidence.toFixed(1)}°</td>
+          <td style="text-align:center">${m.reflection.toFixed(1)}°</td>
+        </tr>`).join("")}
+    </table>`;
+}
+
+function clearReflectionTrials(){
+  reflectionTrials=[];
+  renderReflectionMeasurements();
+}
+
+
+// --------------------------------------------------
+// NEUER BRECHUNGSVERSUCH MIT SNELLIUS-GESETZ
+// --------------------------------------------------
+
+function renderRefraction(){
+  if(current!==4)return;
+
+  refractionAngle=Number(document.getElementById("refractionAngle")?.value ?? refractionAngle);
+  glassIndex=Number(document.getElementById("glassMaterial")?.value ?? glassIndex);
+  refractionDirection=document.getElementById("refractionDirection")?.value ?? refractionDirection;
+
+  const av=document.getElementById("refractionAngleValue");
+  if(av)av.textContent=refractionAngle+"°";
+
+  makeCanvas("refractionCanvas");
+  grid();
+
+  const cx=450;
+  const surfaceY=250;
+  const alpha=refractionAngle*Math.PI/180;
+
+  const n1=refractionDirection==="airGlass"?1:glassIndex;
+  const n2=refractionDirection==="airGlass"?glassIndex:1;
+
+  // Snelliussches Gesetz: n1 * sin(alpha) = n2 * sin(beta)
+  const sinBeta=(n1/n2)*Math.sin(alpha);
+  const totalReflection=Math.abs(sinBeta)>1;
+  const beta=totalReflection?Math.PI/2:Math.asin(Math.max(-1,Math.min(1,sinBeta)));
+
+  // Grenzfläche und Lot
+  line(50,surfaceY,850,surfaceY,"#8bdcff",4);
+  line(cx,surfaceY-190,cx,surfaceY+190,"#72e0a0",2);
+
+  ctx.fillStyle="#72e0a0";
+  ctx.font="16px Arial";
+  ctx.fillText("Lot",cx+10,surfaceY-160);
+
+  let incident,refracted;
+  const incomingFromTop=refractionDirection==="airGlass";
+
+  if(incomingFromTop){
+    incident={x:Math.sin(alpha),y:Math.cos(alpha)};
+    const start={x:cx-incident.x*220,y:surfaceY-incident.y*220};
+    line(start.x,start.y,cx,surfaceY,"#ffd166",4);
+    drawArrow(start.x,start.y,cx,surfaceY,"#ffd166");
+
+    if(totalReflection){
+      const reflected={x:Math.sin(alpha),y:-Math.cos(alpha)};
+      line(cx,surfaceY,cx+reflected.x*220,surfaceY+reflected.y*220,"#ff9b71",4);
+    }else{
+      refracted={x:Math.sin(beta),y:Math.cos(beta)};
+      line(cx,surfaceY,cx+refracted.x*220,surfaceY+refracted.y*220,"#ffd166",4);
+      drawArrow(cx,surfaceY,cx+refracted.x*100,surfaceY+refracted.y*100,"#ffd166");
+    }
+
+    ctx.fillStyle="#ffffff";
+    ctx.fillText("Luft",70,75);
+    ctx.fillText("Material",70,420);
+  }else{
+    incident={x:Math.sin(alpha),y:-Math.cos(alpha)};
+    const start={x:cx-incident.x*220,y:surfaceY-incident.y*220};
+    line(start.x,start.y,cx,surfaceY,"#ffd166",4);
+    drawArrow(start.x,start.y,cx,surfaceY,"#ffd166");
+
+    if(totalReflection){
+      const reflected={x:Math.sin(alpha),y:Math.cos(alpha)};
+      line(cx,surfaceY,cx+reflected.x*220,surfaceY+reflected.y*220,"#ff9b71",4);
+    }else{
+      refracted={x:Math.sin(beta),y:-Math.cos(beta)};
+      line(cx,surfaceY,cx+refracted.x*220,surfaceY+refracted.y*220,"#ffd166",4);
+      drawArrow(cx,surfaceY,cx+refracted.x*100,surfaceY+refracted.y*100,"#ffd166");
+    }
+
+    ctx.fillStyle="#ffffff";
+    ctx.fillText("Material",70,75);
+    ctx.fillText("Luft",70,420);
+  }
+
+  const readout=document.getElementById("refractionText");
+
+  if(totalReflection){
+    readout.innerHTML=
+      "<strong class='warn'>Totalreflexion!</strong><br>"+
+      "Bei diesen Einstellungen kann kein gebrochener Strahl in das zweite Medium austreten. Das Licht wird vollständig zurückgeworfen.<br>"+
+      "<span class='small'>Verkleinere den Einfallswinkel und beobachte, wann wieder ein gebrochener Strahl entsteht.</span>";
+  }else{
+    readout.innerHTML=
+      "Einfallswinkel: <strong>"+refractionAngle.toFixed(1)+"°</strong><br>"+
+      "Brechungswinkel: <strong>"+(beta*180/Math.PI).toFixed(1)+"°</strong><br>"+
+      "Brechungsindex des ersten Mediums: <strong>"+n1.toFixed(2)+"</strong><br>"+
+      "Brechungsindex des zweiten Mediums: <strong>"+n2.toFixed(2)+"</strong><br>"+
+      "<span class='small'>Vergleiche die Winkel. Ändere danach das Material und wiederhole den Versuch.</span>";
+  }
+
+  ctx.fillStyle="#ffffff";
+  ctx.font="15px Arial";
+  ctx.fillText("Grenzfläche",cx+15,surfaceY-10);
+
+  renderRefractionMeasurements(beta,totalReflection);
+}
+
+function saveRefractionTrial(){
+  const alpha=refractionAngle*Math.PI/180;
+  const n1=refractionDirection==="airGlass"?1:glassIndex;
+  const n2=refractionDirection==="airGlass"?glassIndex:1;
+  const s=(n1/n2)*Math.sin(alpha);
+  const total=Math.abs(s)>1;
+
+  refractionTrials.push({
+    material:glassIndex,
+    direction:refractionDirection,
+    incidence:refractionAngle,
+    refraction:total?null:Math.asin(s)*180/Math.PI,
+    totalReflection:total
+  });
+
+  renderRefractionMeasurements();
+}
+
+function renderRefractionMeasurements(){
+  const el=document.getElementById("refractionMeasurements");
+  if(!el)return;
+
+  if(!refractionTrials.length){
+    el.innerHTML="<p class='small'>Noch keine Messungen gespeichert.</p>";
+    return;
+  }
+
+  el.innerHTML=`
+    <table style="width:100%;border-collapse:collapse">
+      <tr>
+        <th>Versuch</th><th>Material</th><th>Einfallswinkel</th><th>Brechungswinkel</th>
+      </tr>
+      ${refractionTrials.map((m,i)=>`
+        <tr>
+          <td>${i+1}</td>
+          <td>${m.material.toFixed(2)}</td>
+          <td style="text-align:center">${m.incidence.toFixed(1)}°</td>
+          <td style="text-align:center">${m.totalReflection?"Totalreflexion":m.refraction.toFixed(1)+"°"}</td>
+        </tr>`).join("")}
+    </table>`;
+}
+
+function clearRefractionTrials(){
+  refractionTrials=[];
+  renderRefractionMeasurements();
+}
+if(n===3){
+  mode="reflection";
+  reflectionAngle=30;
+  mirrorAngle=0;
+  reflectionTrials=[];
+  renderReflection();
+}
+if(n===4){
+  mode="refraction";
+  refractionAngle=30;
+  glassIndex=1.5;
+  refractionDirection="airGlass";
+  refractionTrials=[];
+  renderRefraction();
+}
+  function finish3(){
+  const note=document.getElementById("m3note").value.trim();
+
+  if(!note||reflectionTrials.length<2){
+    document.getElementById("f3").textContent=
+      "Speichere mindestens zwei Messungen mit unterschiedlichen Einfallswinkeln und notiere deine Vermutung.";
+    return;
+  }
+
+  state.notes[3]=note;
+  state.notes.reflectionTrials=reflectionTrials;
+  complete(3);
+}
+function finish4(){
+  const a=document.getElementById("m4a").value.trim();
+  const b=document.getElementById("m4b").value.trim();
+  const c=document.getElementById("m4c").value.trim();
+
+  if(a.length<8||b.length<8||c.length<8||refractionTrials.length<2){
+    document.getElementById("f4").textContent=
+      "Speichere mindestens zwei Messungen und beantworte alle drei Forscherfragen ausführlich.";
+    return;
+  }
+
+  state.notes[4]=[a,b,c];
+  state.notes.refractionTrials=refractionTrials;
+  complete(4);
+}
+                     
 // Start
 updateHeader();showHome();
 </script>
