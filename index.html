@@ -151,7 +151,7 @@ function showMission(n){
   if(n===3){mode="reflection";renderReflection();}
   if(n===4){mode="refraction";restorePage4();renderRefraction();}
   if(n===5){mode="maze";mazeIndex=0;renderMaze();}
-  if(n===6){mode="free";initObjects(true);makeCanvas("freeCanvas");draw();restoreFree();}
+  if(n===6){mode="free";initObjects(true);makeCanvas("freeCanvas",true);draw();restoreFree();}
 }
 function explain(title,text){
   return `<div class="panel"><h3 class="good">✓ Mission abgeschlossen – das hast du herausgefunden</h3><h3>${title}</h3><p>${text}</p></div>`;
@@ -295,7 +295,6 @@ function page6(done){return `
 <button onclick="saveFree()">Notizen speichern</button><button class="success" onclick="finish6()">Forschungsbericht abschließen</button><p id="freeFeedback"></p></div>
 ${done?explain("Dein Forschungsbericht","Du hast eine eigene Forschungsfrage entwickelt, einen Versuch durchgeführt und deine Beobachtungen ausgewertet. Alle sechs Missionen sind abgeschlossen!"):""}`}
 
-// Aufgabenabschluss
 function check1(){
   const ok=document.getElementById("m1a").checked&&!document.getElementById("m1b").checked&&document.getElementById("m1c").checked&&!document.getElementById("m1d").checked;
   const note=document.getElementById("m1note").value.trim();
@@ -334,7 +333,6 @@ function finish6(){
   state.notes.free=[a,b,c];complete(6);
 }
 
-// Canvas und optische Bauteile (für Mission 5 & 6)
 function makeCanvas(id,interactive=false){
   const wrap=document.getElementById(id);if(!wrap)return;
   wrap.innerHTML='<canvas width="900" height="500"></canvas>';
@@ -421,7 +419,6 @@ function traceSingleRay(startY){
         const hit=intersectSegment(x,y,dx,dy,o.x-55*ux,o.y-55*uy,o.x+55*ux,o.y+55*uy);
         if(hit&&hit.t<bestT){bestT=hit.t;best={...hit,kind:"mirror",nx,ny}}
       }else if(o.type==="lens"||o.type==="diverging"){
-        // Linsenebene liegt senkrecht zur optischen Achse (ux, uy)
         const hit=intersectSegment(x,y,dx,dy,o.x-45*nx,o.y-45*ny,o.x+45*nx,o.y+45*ny);
         if(hit&&hit.t<bestT){bestT=hit.t;best={...hit,kind:o.type,o,ux,uy,nx,ny}}
       }else if(o.type==="block"){
@@ -458,7 +455,6 @@ function traceSingleRay(startY){
       if(out){dx=out.x;dy=out.y}
       else{const dot=dx*best.nx+dy*best.ny;dx-=2*dot*best.nx;dy-=2*dot*best.ny}
     }else{
-      // Dünne Linse: Ablenkung proportional zum Abstand h von der optischen Achse
       const h=(best.x-best.o.x)*best.nx+(best.y-best.o.y)*best.ny;
       const f=best.kind==="lens"?170:-170;
       const side=(dx*best.ux+dy*best.uy)>=0?1:-1;
@@ -472,7 +468,6 @@ function traceSingleRay(startY){
 }
 function trace(){
   raySegments=[];
-  // Bei Linsen-Aufgaben in Mission 5 mehrere parallele Strahlen zeigen, damit Bündelung sichtbar wird
   const hasLens=objects.some(o=>o.type==="lens"||o.type==="diverging");
   if(hasLens&&(current===5||current===6)){
     [225,250,275].forEach(y=>traceSingleRay(y));
@@ -499,7 +494,6 @@ function draw(){
   }
 }
 
-// Brechung nach Snellius (Vektorform)
 function refractVector(dx,dy,n1,n2,nx,ny){
   let cosi=-(dx*nx+dy*ny);
   if(cosi<0){nx=-nx;ny=-ny;cosi=-cosi}
@@ -508,7 +502,6 @@ function refractVector(dx,dy,n1,n2,nx,ny){
   return{x:eta*dx+(eta*cosi-Math.sqrt(k))*nx,y:eta*dy+(eta*cosi-Math.sqrt(k))*ny};
 }
 
-// Zehn Abschluss-Labyrinthe (Mission 5)
 const mazes=[
  ["1. Der erste Spiegel","Lenke den Strahl zum Ziel.",1,[700,150],-20],
  ["2. Ein anderer Winkel","Finde eine neue Spiegelstellung.",1,[700,350],20],
@@ -566,7 +559,6 @@ function restoreMazeQuestions(){
   ["q1","q2","q3","q4"].forEach((id,i)=>document.getElementById(id).value=(vals&&vals[i])||"");
 }
 
-// Freies Forschen (Mission 6)
 function restoreFree(){
   const vals=state.notes.free||[];
   ["freeQ","freeO","freeC"].forEach((id,i)=>document.getElementById(id).value=vals[i]||"");
@@ -576,9 +568,6 @@ function saveFree(){
   save();document.getElementById("freeFeedback").textContent="✓ Deine Notizen wurden gespeichert.";
 }
 
-// --------------------------------------------------
-// REFLEXIONSVERSUCH (Mission 3)
-// --------------------------------------------------
 function renderReflection(){
   if(current!==3)return;
 
@@ -599,31 +588,25 @@ function renderReflection(){
   const n={x:-Math.sin(a),y:-Math.cos(a)};
   const q=reflectionAngle*Math.PI/180;
 
-  // Einfallender Strahl: trifft von der Vorderseite auf den Spiegel
   const d={
     x:Math.sin(q)*t.x-Math.cos(q)*n.x,
     y:Math.sin(q)*t.y-Math.cos(q)*n.y
   };
 
-  // Reflexion am Spiegel: Einfallswinkel = Reflexionswinkel
   const r={
     x:Math.sin(q)*t.x+Math.cos(q)*n.x,
     y:Math.sin(q)*t.y+Math.cos(q)*n.y
   };
 
-  // Spiegel und Lot
   line(cx-t.x*150,cy-t.y*150,cx+t.x*150,cy+t.y*150,"#8bdcff",8);
   line(cx-n.x*120,cy-n.y*120,cx+n.x*120,cy+n.y*120,"#72e0a0",2);
 
-  // Strahlen
   line(cx-d.x*300,cy-d.y*300,cx,cy,"#ffd166",4);
   line(cx,cy,cx+r.x*300,cy+r.y*300,"#ffd166",4);
 
-  // Pfeilspitzen
   drawArrow(cx-d.x*80,cy-d.y*80,cx,cy,"#ffd166");
   drawArrow(cx,cy,cx+r.x*80,cy+r.y*80,"#ffd166");
 
-  // Auftreffpunkt
   ctx.fillStyle="#ffffff";
   ctx.beginPath();
   ctx.arc(cx,cy,6,0,Math.PI*2);
@@ -691,9 +674,6 @@ function renderReflectionMeasurements(){
   </table>`;
 }
 
-// --------------------------------------------------
-// BRECHUNGSVERSUCH (Mission 4)
-// --------------------------------------------------
 function renderRefraction(){
   if(current!==4)return;
 
@@ -712,20 +692,17 @@ function renderRefraction(){
   const n1=fromAir?1.0:glassIndex;
   const n2=fromAir?glassIndex:1.0;
 
-  // Medien einfärben (oben: Medium 1, unten: Medium 2)
   ctx.fillStyle=fromAir?"rgba(255,255,255,0.02)":"rgba(75,180,240,0.22)";
   ctx.fillRect(0,0,900,cy);
   ctx.fillStyle=fromAir?"rgba(75,180,240,0.22)":"rgba(255,255,255,0.02)";
   ctx.fillRect(0,cy,900,500-cy);
 
-  // Grenzfläche und Lot
   line(40,cy,860,cy,"#8bdcff",3);
   ctx.setLineDash([7,6]);
   line(cx,40,cx,460,"#72e0a0",2);
   ctx.setLineDash([]);
 
   const alpha=refractionAngle*Math.PI/180;
-  // Einfallender Strahl von oben links nach (cx, cy)
   const inDir={x:Math.sin(alpha),y:Math.cos(alpha)};
   line(cx-inDir.x*260,cy-inDir.y*260,cx,cy,"#ffd166",4);
   drawArrow(cx-inDir.x*110,cy-inDir.y*110,cx,cy,"#ffd166");
@@ -735,7 +712,6 @@ function renderRefraction(){
   const matName=glassIndex===1.33?"Wasser":glassIndex===1.5?"Glas":glassIndex===1.7?"Flintglas":"Material";
 
   if(sinBeta>1){
-    // Totalreflexion zurück nach oben rechts
     const reflDir={x:Math.sin(alpha),y:-Math.cos(alpha)};
     line(cx,cy,cx+reflDir.x*260,cy+reflDir.y*260,"#ff7b7b",4);
     drawArrow(cx,cy,cx+reflDir.x*120,cy+reflDir.y*120,"#ff7b7b");
@@ -763,7 +739,6 @@ function renderRefraction(){
     }
   }
 
-  // Auftreffpunkt & Beschriftung
   ctx.fillStyle="#ffffff";
   ctx.beginPath();ctx.arc(cx,cy,6,0,Math.PI*2);ctx.fill();
 
@@ -812,7 +787,6 @@ function renderRefractionMeasurements(){
   </table>`;
 }
 
-// Start
 updateHeader();
 </script>
 </body>
