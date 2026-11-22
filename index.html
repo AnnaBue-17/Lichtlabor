@@ -2,949 +2,453 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mission Lichtlabor</title>
 <style>
-:root {
-  --bg:#071426; --panel:#10243d; --panel2:#183451;
-  --text:#eef6ff; --muted:#a9bfd5; --cyan:#54d9ef;
-  --yellow:#ffd166; --green:#70e0a0; --red:#ff8585;
-}
-* { box-sizing:border-box; }
-body {
-  margin:0; font-family:Arial,sans-serif; color:var(--text);
-  background:radial-gradient(ellipse at top,#16385a,var(--bg) 65%);
-  min-height:100vh;
-}
-header {
-  padding:18px 20px; display:flex; align-items:center;
-  justify-content:space-between; gap:12px; flex-wrap:wrap;
-  background:#08182a; border-bottom:1px solid #294765;
-  position:sticky; top:0; z-index:5;
-}
-header h1 { margin:0; font-size:22px; }
-header small { color:var(--muted); }
-main { max-width:1100px; margin:auto; padding:20px; }
-h2 { color:var(--cyan); margin-top:0; }
-h3 { margin-top:0; }
-p { line-height:1.55; }
-button,select,input,textarea {
-  font:inherit; border-radius:9px; border:1px solid #45617d;
-  padding:10px 13px; color:var(--text); background:#142c46;
-}
-button { cursor:pointer; transition:.15s; }
-button:hover { background:#245070; transform:translateY(-1px); }
-button:disabled { opacity:.4; cursor:not-allowed; transform:none; }
-button.primary { background:#087d9a; border-color:#36c7df; }
-button.success { background:#176341; border-color:#54c88a; }
-button.warning { background:#72521c; border-color:#e5b54d; }
-button.danger { background:#6d3037; }
-textarea,input { width:100%; }
-textarea { min-height:80px; resize:vertical; }
-.panel {
-  background:linear-gradient(145deg,var(--panel),#0c1d31);
-  border:1px solid #294765; border-radius:15px;
-  padding:18px; margin:14px 0;
-}
-.grid {
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
-  gap:13px;
-}
-.mission {
-  text-align:left; min-height:130px; width:100%;
-  display:flex; flex-direction:column; gap:8px;
-  background:#112943; border:1px solid #365775;
-}
-.mission.locked { opacity:.45; }
-.mission.done { border-color:var(--green); }
-.mission strong { font-size:17px; }
-.mission span { color:var(--muted); font-size:14px; }
-.pill {
-  display:inline-block; border-radius:30px; padding:4px 9px;
-  background:#203c59; font-size:12px; width:max-content;
-}
-.muted { color:var(--muted); }
-.good { color:var(--green); }
-.warn { color:var(--yellow); }
-.hidden { display:none !important; }
-.actions { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
-.progress {
-  height:9px; background:#20364d; border-radius:20px; overflow:hidden;
-  margin:10px 0;
-}
-.progress > div { height:100%; background:var(--green); width:0%; }
-canvas {
-  display:block; width:100%; max-width:900px; height:auto;
-  background:#061321; border:1px solid #385674;
-  border-radius:12px; touch-action:none; margin:12px auto;
-}
-label { display:block; margin:10px 0 5px; color:#c7d9e9; }
-.answer { padding:12px; background:#0b1d30; border-radius:10px; margin:10px 0; }
-.answer label { display:flex; gap:9px; align-items:flex-start; }
-.answer input { width:auto; margin-top:4px; }
-.small { font-size:13px; }
-#saveStatus { font-size:12px; color:var(--green); }
-footer { text-align:center; color:var(--muted); padding:30px; }
+:root{--bg:#081629;--panel:#122a43;--panel2:#1b3b59;--text:#f0f7ff;--muted:#b5c8da;--cyan:#55d9ef;--green:#72e0a0;--yellow:#ffd166}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#173b5c,#081629 70%);color:var(--text);font-family:Arial,sans-serif}
+header{background:#071426;border-bottom:1px solid #34516c;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+h1{font-size:22px;margin:0}header small,.muted{color:var(--muted)}
+main{max-width:1050px;margin:auto;padding:18px}
+h2{color:var(--cyan)}h3{margin-top:0}
+.panel{background:var(--panel);border:1px solid #34516c;border-radius:14px;padding:17px;margin:13px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+button,input,textarea{font:inherit;color:var(--text);background:#183650;border:1px solid #52718c;border-radius:9px;padding:10px}
+button{cursor:pointer}button:hover{background:#285577}
+button:disabled{opacity:.4;cursor:not-allowed}
+.primary{background:#087d9a;border-color:var(--cyan)}
+.success{background:#176341;border-color:var(--green)}
+.mission{width:100%;text-align:left;min-height:125px;background:#122e49;display:flex;flex-direction:column;gap:8px}
+.mission.done{border-color:var(--green)}.mission.locked{opacity:.4}
+.pill{font-size:12px;background:#294661;border-radius:20px;padding:4px 9px;width:max-content}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+textarea{width:100%;min-height:75px;resize:vertical}
+label{display:block;margin:10px 0 5px}
+.answer{background:#0a1c30;border-radius:9px;padding:12px;margin:10px 0}
+.answer label{display:flex;gap:8px;align-items:flex-start}
+.answer input{width:auto}
+canvas{display:block;width:100%;height:auto;background:#061321;border:1px solid #496783;border-radius:10px;margin:12px auto;touch-action:none}
+.progress{height:9px;background:#294158;border-radius:20px;overflow:hidden;margin:10px 0}
+.progress div{height:100%;background:var(--green);width:0}
+.hidden{display:none!important}.good{color:var(--green)}.warn{color:var(--yellow)}
+.small{font-size:13px;color:var(--muted)}
+#saveStatus{font-size:12px;color:var(--green)}
+footer{text-align:center;color:var(--muted);padding:25px}
 </style>
 </head>
 <body>
 <header>
-  <div>
-    <h1>🔦 Mission Lichtlabor</h1>
-    <small>Deine Forschungsreise durch die Welt des Lichts</small>
-  </div>
-  <div>
-    <span id="saveStatus">Fortschritt wird gespeichert</span>
-    <div class="small" id="headerProgress"></div>
-  </div>
+  <div><h1>🔦 Mission Lichtlabor</h1><small>Entdecke die Geheimnisse des Lichts</small></div>
+  <div><span id="saveStatus">Fortschritt lokal gespeichert</span><br><small id="headerProgress"></small></div>
 </header>
-
 <main>
 <section id="home">
   <div class="panel">
     <h2>Willkommen im Lichtlabor!</h2>
-    <p>
-      Du bist Teil eines Forschungsteams. Untersuche, wie sich Licht ausbreitet,
-      was an Spiegeln und Materialien geschieht und wie Linsen Licht verändern.
-    </p>
-    <p>
-      Deine Aufgabe: Beobachten, ausprobieren, messen und eigene Erklärungen
-      entwickeln. Die wichtigsten Erkenntnisse sollst du selbst entdecken.
-    </p>
-    <p class="warn">Wichtig: Die Missionen werden nacheinander freigeschaltet.
-      Bereits abgeschlossene Missionen kannst du jederzeit erneut öffnen.</p>
-    <button class="primary" onclick="showMissions()">🚀 Zu den Missionen</button>
+    <p>Du bist Teil eines Forschungsteams. Untersuche, wie Licht sich ausbreitet, an Spiegeln reflektiert und an Glas und Linsen gebrochen wird.</p>
+    <p>Beobachte, probiere aus, miss nach und entwickle eigene Erklärungen. Die physikalischen Regeln werden erst nach deinen Experimenten erklärt.</p>
+    <button class="primary" onclick="showMissions()">🚀 Missionen öffnen</button>
   </div>
   <div class="panel">
-    <h3>So arbeitest du im Lichtlabor</h3>
+    <h3>So funktioniert das Labor</h3>
     <ul>
-      <li>Ziehe optische Bauteile mit dem Finger oder der Maus.</li>
-      <li>Ziehe am runden Drehgriff, um ein Bauteil zu drehen.</li>
-      <li>Beobachte den Lichtweg und halte deine Erkenntnisse fest.</li>
-      <li>Schließe eine Mission ab, um die nächste freizuschalten.</li>
-      <li>Du kannst allein oder mit einer Partnerin bzw. einem Partner arbeiten.</li>
+      <li>Ziehe Bauteile mit dem Finger oder der Maus.</li>
+      <li>Ziehe den gelben runden Griff, um ein Bauteil zu drehen.</li>
+      <li>Notiere Beobachtungen und Messungen.</li>
+      <li>Schließe Missionen nacheinander ab.</li>
+      <li>Dein Fortschritt wird auf diesem Gerät gespeichert.</li>
     </ul>
   </div>
 </section>
 
-<section id="missionMap" class="hidden">
-  <div class="actions">
-    <button onclick="showHome()">← Startseite</button>
-  </div>
+<section id="map" class="hidden">
+  <div class="actions"><button onclick="showHome()">← Start</button></div>
   <h2>Deine Missionsübersicht</h2>
-  <p class="muted">Schließe die Missionen der Reihe nach ab.</p>
   <div class="progress"><div id="overallBar"></div></div>
-  <p id="overallText" class="small muted"></p>
-  <div class="grid" id="missionCards"></div>
+  <p id="overallText" class="small"></p>
+  <div id="missionCards" class="grid"></div>
 </section>
 
-<section id="missionView" class="hidden">
-  <div class="actions">
-    <button onclick="showMissions()">← Missionsübersicht</button>
-  </div>
-  <div id="missionContent"></div>
+<section id="view" class="hidden">
+  <div class="actions"><button onclick="showMissions()">← Missionsübersicht</button></div>
+  <div id="content"></div>
 </section>
 </main>
-
 <footer>Mission Lichtlabor · Physik entdecken durch eigenes Forschen</footer>
 
 <script>
-const KEY = "missionLichtlabor_v3";
+const STORAGE_KEY="mission-lichtlabor-progress-v4";
+const emptyState={completed:[],mazeDone:[],notes:{},measurements:[]};
+let state=loadState(),current=0,canvas=null,ctx=null,objects=[],selected=null;
+let mode="reflection",pointerMode="",lastPoint=null,mazeIndex=0,mazeSolved=false;
+let slabAngle=0,raySegments=[];
 
-const defaultState = {
-  completed: [],
-  mazeDone: [],
-  notes: {},
-  measurements: [],
-  mazeIndex: 0
-};
-
-let state = loadState();
-let currentMission = 0;
-let selectedMaze = 0;
-let objects = [];
-let dragObject = null;
-let dragMode = "";
-let rayData = [];
-let canvasMode = "reflection";
-let canvas;
-let ctx;
-let animationFrame = null;
-let lastPointer = null;
-let slabAngle = 0;
-let mazeSolved = false;
-
-function loadState() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(KEY));
-    return saved ? {...defaultState,...saved} : {...defaultState};
-  } catch(e) { return {...defaultState}; }
+function loadState(){
+  try{return {...emptyState,...JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}")}}
+  catch(e){return {...emptyState}}
 }
-function saveState() {
-  try {
-    localStorage.setItem(KEY,JSON.stringify(state));
-    document.getElementById("saveStatus").textContent = "✓ Lokal gespeichert";
-  } catch(e) {
-    document.getElementById("saveStatus").textContent = "Speichern nicht möglich";
-  }
+function save(){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));document.getElementById("saveStatus").textContent="✓ Gespeichert auf diesem Gerät"}
+  catch(e){document.getElementById("saveStatus").textContent="Speichern nicht möglich"}
   updateHeader();
 }
-function updateHeader() {
-  const count = state.completed.length;
-  document.getElementById("headerProgress").textContent =
-    count + " von 6 Missionen abgeschlossen";
+function updateHeader(){
+  document.getElementById("headerProgress").textContent=state.completed.length+" von 6 Missionen abgeschlossen";
 }
-function unlocked(n) {
-  return n === 1 || state.completed.includes(n-1);
+function unlocked(n){return n===1||state.completed.includes(n-1)}
+function complete(n){
+  if(!state.completed.includes(n))state.completed.push(n);
+  save();showMission(n);
 }
-function completeMission(n) {
-  if (!state.completed.includes(n)) state.completed.push(n);
-  saveState();
-  showMission(n);
-}
-function showHome() {
-  hideSections();
-  document.getElementById("home").classList.remove("hidden");
-}
-function showMissions() {
-  hideSections();
-  document.getElementById("missionMap").classList.remove("hidden");
-  renderMissionMap();
-}
-function hideSections() {
-  ["home","missionMap","missionView"].forEach(id =>
-    document.getElementById(id).classList.add("hidden"));
-}
-function renderMissionMap() {
-  const names = [
-    ["Lichtdetektive","Lichtquellen und Lichtausbreitung","🔦"],
-    ["Das Geheimnis der Materialien","Was geschieht mit Licht an Stoffen?","🧪"],
-    ["Spiegel-Forschung","Untersuche Spiegel und Winkel","🪞"],
-    ["Linsen und Lichtbrechung","Lichtwege in Glas und Linsen","🔍"],
-    ["Die große Lichtlabor-Prüfung","Zehn optische Herausforderungen","🏆"],
-    ["Freie Forschungsmission","Entwickle dein eigenes Experiment","🧑‍🔬"]
+function hideAll(){["home","map","view"].forEach(id=>document.getElementById(id).classList.add("hidden"))}
+function showHome(){hideAll();document.getElementById("home").classList.remove("hidden")}
+function showMissions(){
+  hideAll();document.getElementById("map").classList.remove("hidden");
+  const names=[
+    ["🔦","Lichtdetektive","Lichtquellen und Lichtausbreitung"],
+    ["🧪","Das Geheimnis der Materialien","Was geschieht mit Licht an Stoffen?"],
+    ["🪞","Spiegel-Forschung","Untersuche Spiegel und Winkel"],
+    ["🔍","Linsen und Lichtbrechung","Lichtwege in Glas und Linsen"],
+    ["🏆","Die große Lichtlabor-Prüfung","Zehn optische Herausforderungen"],
+    ["🧑‍🔬","Freie Forschungsmission","Entwickle dein eigenes Experiment"]
   ];
-  const cards = document.getElementById("missionCards");
-  cards.innerHTML = "";
-  names.forEach((m,i) => {
-    const n=i+1, done=state.completed.includes(n), open=unlocked(n);
+  const root=document.getElementById("missionCards");root.innerHTML="";
+  names.forEach((m,i)=>{
+    const n=i+1,done=state.completed.includes(n),open=unlocked(n);
     const b=document.createElement("button");
-    b.className="mission "+(done?"done":"")+(open?"":" locked");
-    b.disabled=!open;
-    b.innerHTML=`<strong>${m[2]} Mission ${n}: ${m[0]}</strong>
-      <span>${m[1]}</span>
-      <span class="pill">${done?"✓ Abgeschlossen":open?"Freigeschaltet":"🔒 Noch gesperrt"}</span>`;
-    b.onclick=()=>showMission(n);
-    cards.appendChild(b);
+    b.className="mission "+(done?"done":"")+(open?"":" locked");b.disabled=!open;
+    b.innerHTML=`<strong>${m[0]} Mission ${n}: ${m[1]}</strong><span>${m[2]}</span><span class="pill">${done?"✓ Abgeschlossen":open?"Freigeschaltet":"🔒 Gesperrt"}</span>`;
+    b.onclick=()=>showMission(n);root.appendChild(b);
   });
-  document.getElementById("overallBar").style.width =
-    (state.completed.length/6*100)+"%";
-  document.getElementById("overallText").textContent =
-    state.completed.length+" von 6 Missionen abgeschlossen";
+  document.getElementById("overallBar").style.width=(state.completed.length/6*100)+"%";
+  document.getElementById("overallText").textContent=state.completed.length+" von 6 Missionen abgeschlossen";
 }
-function showMission(n) {
-  if (!unlocked(n)) return;
-  currentMission=n;
-  hideSections();
-  document.getElementById("missionView").classList.remove("hidden");
-  const content=document.getElementById("missionContent");
+function showMission(n){
+  if(!unlocked(n))return;
+  current=n;hideAll();document.getElementById("view").classList.remove("hidden");
   const done=state.completed.includes(n);
-  const pages=[
-    missionOne,missionTwo,missionThree,missionFour,missionFive,missionSix
-  ];
-  content.innerHTML=pages[n-1](done);
-  if(n===3 || n===4 || n===5 || n===6) setupLab(n);
-  if(n===5) renderMaze();
-  if(n===6) renderFreeLab();
-  if(n===3) renderReflectionLab();
-  if(n===4) renderRefractionLab();
-  if(n===1 || n===2) restoreMissionNotes(n);
+  const pages=[page1,page2,page3,page4,page5,page6];
+  document.getElementById("content").innerHTML=pages[n-1](done);
+  if(n===1||n===2)restoreNotes(n);
+  if(n===3){mode="reflection";initObjects();makeCanvas("reflectionCanvas");draw();}
+  if(n===4){mode="refraction";slabAngle=0;makeCanvas("refractionCanvas");drawRefraction();}
+  if(n===5){mode="maze";mazeIndex=0;renderMaze();}
+  if(n===6){mode="free";initObjects(true);makeCanvas("freeCanvas");draw();restoreFree();}
 }
-function missionOne(done) {
-return `
-<h2>Mission 1 – Lichtdetektive 🔦</h2>
-<div class="panel">
-<h3>Dein Forschungsauftrag</h3>
+function explain(title,text){
+  return `<div class="panel"><h3 class="good">✓ Mission abgeschlossen – das hast du herausgefunden</h3><h3>${title}</h3><p>${text}</p></div>`;
+}
+function page1(done){return `
+<h2>Mission 1 – Lichtdetektive 🔦</h2><div class="panel">
 <p>Finde heraus, wo Licht herkommt und wie es sich ausbreitet.</p>
-<p><strong>Untersuche:</strong> Welche Dinge senden selbst Licht aus?
-Welche Dinge werden nur beleuchtet?</p>
+<p>Welche Dinge senden selbst Licht aus?</p>
 <div class="answer">
 <label><input type="checkbox" id="m1a"> Die Sonne sendet selbst Licht aus.</label>
 <label><input type="checkbox" id="m1b"> Ein beleuchteter Tisch sendet selbst Licht aus.</label>
 <label><input type="checkbox" id="m1c"> Eine eingeschaltete Lampe sendet selbst Licht aus.</label>
 <label><input type="checkbox" id="m1d"> Der Mond leuchtet aus eigener Kraft.</label>
 </div>
-<label>Deine Vermutung: Wie breitet sich Licht aus?</label>
-<textarea id="m1note" placeholder="Ich vermute, dass Licht ..."></textarea>
-<button class="primary" onclick="checkMissionOne()">Forschungsergebnis einreichen</button>
-<div id="m1feedback"></div>
-</div>
-${done?explanation("Lichtquellen und Lichtausbreitung",
-"Lichtquellen senden selbst Licht aus. Licht breitet sich in einem gleichmäßigen, durchsichtigen Stoff geradlinig aus. Ein Lichtstrahl ist ein Modell, mit dem wir die Ausbreitungsrichtung darstellen."):""}
-`;
-}
-function missionTwo(done) {
-return `
-<h2>Mission 2 – Das Geheimnis der Materialien 🧪</h2>
-<div class="panel">
-<h3>Dein Forschungsauftrag</h3>
+<label>Deine Vermutung: Wie breitet sich Licht aus?</label><textarea id="m1note" placeholder="Ich vermute ..."></textarea>
+<button class="primary" onclick="check1()">Forschungsergebnis einreichen</button><p id="f1"></p></div>
+${done?explain("Lichtquellen und Lichtausbreitung","Lichtquellen senden selbst Licht aus. In einem gleichmäßigen, durchsichtigen Stoff breitet sich Licht geradlinig aus. Lichtstrahlen sind ein Modell, um die Ausbreitungsrichtung darzustellen."):""}`}
+function page2(done){return `
+<h2>Mission 2 – Das Geheimnis der Materialien 🧪</h2><div class="panel">
 <p>Was geschieht, wenn Licht auf unterschiedliche Materialien trifft?</p>
-<p>Ordne die Beobachtungen den passenden Vorgängen zu.</p>
+<p>Wähle einen Vorgang aus und beschreibe deine Beobachtungen.</p>
 <div class="answer">
-<label><input type="radio" name="mat1" value="ref"> Licht wird an einer glatten Oberfläche zurückgeworfen.</label>
-<label><input type="radio" name="mat1" value="abs"> Licht wird aufgenommen und in andere Energie umgewandelt.</label>
-<label><input type="radio" name="mat1" value="trans"> Licht gelangt durch ein Material hindurch.</label>
-<label><input type="radio" name="mat1" value="diff"> Licht wird an einer rauen Oberfläche in viele Richtungen gestreut.</label>
+<label><input type="radio" name="mat" value="r"> Licht wird an einer glatten Fläche zurückgeworfen.</label>
+<label><input type="radio" name="mat" value="a"> Licht wird aufgenommen.</label>
+<label><input type="radio" name="mat" value="t"> Licht gelangt durch ein Material hindurch.</label>
+<label><input type="radio" name="mat" value="d"> Licht wird an einer rauen Fläche in viele Richtungen gestreut.</label>
 </div>
-<label>Was würdest du bei einem Spiegel, Papier und einer Glasscheibe beobachten?</label>
-<textarea id="m2note" placeholder="Meine Beobachtungen ..."></textarea>
-<button class="primary" onclick="checkMissionTwo()">Ergebnis einreichen</button>
-<div id="m2feedback"></div>
-</div>
-${done?explanation("Licht und Materialien",
-"An glatten Flächen kann gerichtete Reflexion auftreten. Raue Flächen streuen Licht in viele Richtungen. Manche Stoffe absorbieren Licht, andere lassen es ganz oder teilweise hindurch. Diese Vorgänge können gleichzeitig auftreten."):""}
-`;
-}
-function explanation(title,text) {
-return `<div class="panel"><h3 class="good">✓ Mission abgeschlossen: Das hast du herausgefunden</h3>
-<h3>${title}</h3><p>${text}</p></div>`;
-}
-function checkMissionOne() {
-  const correct = document.getElementById("m1a").checked &&
-    !document.getElementById("m1b").checked &&
-    document.getElementById("m1c").checked &&
-    !document.getElementById("m1d").checked;
-  const note=document.getElementById("m1note").value.trim();
-  if(!correct || note.length<5) {
-    document.getElementById("m1feedback").innerHTML =
-      '<p class="warn">Überprüfe deine Auswahl und notiere eine eigene Vermutung.</p>';
-    return;
-  }
-  state.notes[1]=note; completeMission(1);
-}
-function checkMissionTwo() {
-  const selected=document.querySelector('input[name="mat1"]:checked');
-  const note=document.getElementById("m2note").value.trim();
-  if(!selected || note.length<5) {
-    document.getElementById("m2feedback").innerHTML =
-      '<p class="warn">Wähle einen Vorgang aus und schreibe eine Beobachtung auf.</p>';
-    return;
-  }
-  state.notes[2]=note; completeMission(2);
-}
-function restoreMissionNotes(n) {
-  const el=document.getElementById("m"+n+"note");
-  if(el && state.notes[n]) el.value=state.notes[n];
-}
-function missionThree(done) {
-return `
-<h2>Mission 3 – Spiegel-Forschung 🪞</h2>
-<div class="panel">
-<p>Finde heraus, wie ein Lichtstrahl an einem ebenen Spiegel reflektiert wird.
-Du darfst den Spiegel verschieben und drehen.</p>
-<p><strong>Deine Forschungsfragen:</strong></p>
-<ul>
-<li>Was verändert sich, wenn du den Spiegel drehst?</li>
-<li>Wie hängen einfallender und reflektierter Strahl zusammen?</li>
-<li>Welche Rolle spielt das Lot?</li>
-</ul>
-<p class="warn">Die Regel wird dir noch nicht verraten. Sammle erst Beobachtungen!</p>
-</div>
-<div class="panel">
-<div class="actions">
-<button onclick="addObject('mirror')">+ Spiegel</button>
-<button onclick="rotateSelected(-10)">↶ Drehen</button>
-<button onclick="rotateSelected(10)">↷ Drehen</button>
-<button onclick="resetLab()">Zurücksetzen</button>
-</div>
-<div id="labCanvasWrap"></div>
-<p class="small muted">Bauteil antippen und ziehen. Zum Drehen den kleinen runden Griff am Bauteil bewegen.</p>
-<div id="labReadout" class="answer">Wähle einen Spiegel aus und beobachte den Strahlenverlauf.</div>
-<label>Messung: Einfallswinkel (in Grad)</label>
-<input id="incidence" type="number" min="0" max="90" placeholder="z. B. 30">
-<label>Messung: Reflexionswinkel (in Grad)</label>
-<input id="reflection" type="number" min="0" max="90" placeholder="z. B. 30">
-<button onclick="saveMeasurement()">Messung speichern</button>
-<div id="measureList"></div>
-<label>Deine Vermutung: Welche Beziehung besteht zwischen den Winkeln?</label>
-<textarea id="m3hyp" placeholder="Ich vermute ..."></textarea>
-<button class="primary" onclick="finishReflection()">Forschung abschließen</button>
-<div id="m3feedback"></div>
-</div>
-${done?explanation("Das Reflexionsgesetz",
-"Bei der Reflexion an einem ebenen Spiegel liegt der reflektierte Strahl in der Einfallsebene. Der Einfallswinkel ist gleich dem Reflexionswinkel. Beide Winkel werden zum Lot gemessen, also zur Senkrechten auf die Spiegeloberfläche."):""}
-`;
-}
-function missionFour(done) {
-return `
-<h2>Mission 4 – Linsen und Lichtbrechung 🔍</h2>
-<div class="panel">
-<h3>Dein Forschungsauftrag</h3>
+<label>Was beobachtest du bei Spiegel, Papier und Glas?</label><textarea id="m2note"></textarea>
+<button class="primary" onclick="check2()">Ergebnis einreichen</button><p id="f2"></p></div>
+${done?explain("Licht und Materialien","An glatten Flächen kann gerichtete Reflexion auftreten. Raue Flächen streuen Licht. Manche Stoffe absorbieren Licht, andere lassen es ganz oder teilweise hindurch. Diese Vorgänge können gleichzeitig auftreten."):""}`}
+function page3(done){return `
+<h2>Mission 3 – Spiegel-Forschung 🪞</h2><div class="panel">
+<p>Untersuche, wie ein Lichtstrahl an einem ebenen Spiegel reflektiert wird. Verschiebe und drehe den Spiegel.</p>
+<ul><li>Was verändert sich, wenn du den Spiegel drehst?</li><li>Wie hängen einfallender und reflektierter Strahl zusammen?</li><li>Welche Rolle spielt das Lot?</li></ul>
+<p class="warn">Entdecke die Regel erst durch deine eigenen Versuche!</p>
+<div class="actions"><button onclick="addObject('mirror')">+ Spiegel</button><button onclick="rotateSelected(-10)">↶ Drehen</button><button onclick="rotateSelected(10)">↷ Drehen</button><button onclick="resetLab()">Zurücksetzen</button></div>
+<div id="reflectionCanvas"></div><p class="small">Bauteil ziehen. Zum Drehen den gelben Griff bewegen.</p>
+<label>Einfallswinkel (Grad)</label><input id="angleA" type="number" min="0" max="90">
+<label>Reflexionswinkel (Grad)</label><input id="angleB" type="number" min="0" max="90">
+<button onclick="saveMeasurement()">Messung speichern</button><div id="measurements"></div>
+<label>Welche Beziehung vermutest du zwischen den Winkeln?</label><textarea id="m3note"></textarea>
+<button class="primary" onclick="finish3()">Forschung abschließen</button><p id="f3"></p></div>
+${done?explain("Das Reflexionsgesetz","Der Einfallswinkel ist gleich dem Reflexionswinkel. Beide Winkel werden zum Lot gemessen – also zur Senkrechten auf die Spiegeloberfläche. Einfallender Strahl, Lot und reflektierter Strahl liegen in einer Ebene."):""}`}
+function page4(done){return `
+<h2>Mission 4 – Linsen und Lichtbrechung 🔍</h2><div class="panel">
 <p>Untersuche, wie Licht seine Richtung verändert, wenn es von Luft in Glas und wieder zurück gelangt.</p>
-<p>Verändere den Einfallswinkel und beobachte den Verlauf im Glasblock.</p>
-<p>Vergleiche außerdem Sammellinsen und Zerstreuungslinsen.</p>
-</div>
-<div class="panel">
-<div class="actions">
-<button onclick="setSlabAngle(-5)">Winkel −</button>
-<button onclick="setSlabAngle(5)">Winkel +</button>
-<button onclick="slabAngle=0;renderRefractionLab()">Zurücksetzen</button>
-</div>
-<div id="refractionCanvasWrap"></div>
-<div id="refractionReadout" class="answer"></div>
-<p class="small muted">Das Modell berechnet die Richtungsänderung an den parallelen Grenzflächen mit dem Snelliusschen Gesetz.</p>
-<label>Was beobachtest du beim Übergang von Luft in Glas?</label>
-<textarea id="m4note" placeholder="Ich beobachte ..."></textarea>
-<label>Was verändert eine Sammellinse mit parallelen Lichtstrahlen?</label>
-<textarea id="m4lens" placeholder="Ich vermute ..."></textarea>
-<button class="primary" onclick="finishRefraction()">Forschung abschließen</button>
-<div id="m4feedback"></div>
-</div>
-${done?explanation("Brechung und Linsen",
-"Beim Übergang zwischen zwei Stoffen ändert Licht im Allgemeinen seine Richtung. Es gilt das Snelliussche Gesetz: n₁ · sin(α) = n₂ · sin(β). Eine Sammellinse bündelt parallel einfallende Lichtstrahlen näherungsweise in einem Brennpunkt. Eine Zerstreuungslinse lässt sie auseinanderlaufen."):""}
-`;
-}
-function missionFive(done) {
-return `
-<h2>Mission 5 – Die große Lichtlabor-Prüfung 🏆</h2>
-<div class="panel">
-<p>Jetzt bist du an der Reihe: Löse zehn optische Herausforderungen.
-Verändere die Spiegelstellung, bis der Lichtstrahl das Ziel erreicht.</p>
-<p>In einigen Aufgaben musst du mehrere Spiegel nutzen. In anderen
-untersuchst du die Brechung oder kombinierst optische Bauteile.</p>
-<div class="progress"><div id="mazeBar"></div></div>
-<p id="mazeProgress"></p>
-</div>
-<div class="panel">
-<div id="mazeTitle"></div>
-<div class="actions">
-<button onclick="previousMaze()">← Vorherige</button>
-<button onclick="nextMaze()">Nächste →</button>
-<button onclick="resetMaze()">Aufgabe zurücksetzen</button>
-</div>
-<div id="mazeCanvasWrap"></div>
-<p class="small muted">Ziehe die Spiegel und drehe sie am runden Griff. Das Ziel ist der leuchtende Kreis.</p>
+<div class="actions"><button onclick="changeSlab(-5)">Winkel −</button><button onclick="changeSlab(5)">Winkel +</button><button onclick="slabAngle=0;drawRefraction()">Zurücksetzen</button></div>
+<div id="refractionCanvas"></div><div id="refractionText" class="answer"></div>
+<p class="small">Das Modell berechnet die Richtungsänderung an parallelen Grenzflächen mit dem Snelliusschen Gesetz.</p>
+<label>Was beobachtest du beim Übergang von Luft in Glas?</label><textarea id="m4a"></textarea>
+<label>Was macht eine Sammellinse mit parallelen Lichtstrahlen?</label><textarea id="m4b"></textarea>
+<button class="primary" onclick="finish4()">Forschung abschließen</button><p id="f4"></p></div>
+${done?explain("Brechung und Linsen","Beim Übergang zwischen zwei Stoffen ändert Licht im Allgemeinen seine Richtung. Es gilt n₁ · sin(α) = n₂ · sin(β). Eine Sammellinse bündelt parallel einfallende Lichtstrahlen näherungsweise in einem Brennpunkt. Eine Zerstreuungslinse lässt sie auseinanderlaufen."):""}`}
+function page5(done){return `
+<h2>Mission 5 – Die große Lichtlabor-Prüfung 🏆</h2><div class="panel">
+<p>Löse zehn optische Herausforderungen. Verändere die Spiegelstellung, bis der Lichtstrahl das Ziel erreicht.</p>
+<div class="progress"><div id="mazeBar"></div></div><p id="mazeProgress"></p></div>
+<div class="panel"><h3 id="mazeTitle"></h3><p id="mazeDesc"></p>
+<div class="actions"><button onclick="previousMaze()">← Vorherige</button><button onclick="nextMaze()">Nächste →</button><button onclick="renderMaze()">Zurücksetzen</button></div>
+<div id="mazeCanvas"></div><p class="small">Ziehe die Spiegel und drehe sie am gelben Griff. Triff mit dem Strahl das grüne Ziel.</p>
 <div id="mazeStatus" class="answer"></div>
-<div id="mazeReflection" class="hidden">
+<div id="mazeQuestions" class="hidden">
 <h3 class="good">Geschafft! Reflektiere dein Vorgehen.</h3>
-<label>1. Was hast du ausprobiert?</label>
-<textarea id="mazeQ1"></textarea>
-<label>2. Welche Veränderung hat geholfen?</label>
-<textarea id="mazeQ2"></textarea>
-<label>3. Warum wurde der Lichtstrahl so abgelenkt?</label>
-<textarea id="mazeQ3"></textarea>
-<label>4. Welche physikalische Regel kannst du daraus ableiten?</label>
-<textarea id="mazeQ4"></textarea>
+<label>1. Was hast du ausprobiert?</label><textarea id="q1"></textarea>
+<label>2. Welche Veränderung hat geholfen?</label><textarea id="q2"></textarea>
+<label>3. Warum wurde der Lichtstrahl so abgelenkt?</label><textarea id="q3"></textarea>
+<label>4. Welche physikalische Regel kannst du ableiten?</label><textarea id="q4"></textarea>
 <button class="success" onclick="saveMazeReflection()">Reflexion speichern und weiter</button>
-</div>
-</div>
-${done?explanation("Du hast die Lichtlabor-Prüfung bestanden",
-"Du hast unterschiedliche Lichtwege untersucht und gelernt, optische Bauteile gezielt einzusetzen. Nutze deine Beobachtungen, Messungen und Erklärungen für eigene Experimente."):""}
-`;
+</div></div>
+${done?explain("Prüfung abgeschlossen","Du hast die optischen Herausforderungen bearbeitet und deine Beobachtungen ausgewertet. Nutze deine Erkenntnisse für eigene Experimente."):""}`}
+function page6(done){return `
+<h2>Mission 6 – Freie Forschungsmission 🧑‍🔬</h2><div class="panel">
+<p>Du bist jetzt selbst Forscherin oder Forscher. Entwickle eine eigene Fragestellung und baue einen Versuchsaufbau.</p>
+<div class="actions"><button onclick="addObject('mirror')">+ Spiegel</button><button onclick="addObject('lens')">+ Sammellinse</button><button onclick="addObject('diverging')">+ Zerstreuungslinse</button><button onclick="addObject('block')">+ Glasblock</button><button onclick="rotateSelected(-10)">↶ Drehen</button><button onclick="rotateSelected(10)">↷ Drehen</button><button onclick="resetLab()">Neu aufbauen</button></div>
+<div id="freeCanvas"></div>
+<label>Meine Forschungsfrage</label><textarea id="freeQ"></textarea>
+<label>Versuchsaufbau und Beobachtungen</label><textarea id="freeO"></textarea>
+<label>Meine Erklärung</label><textarea id="freeC"></textarea>
+<button onclick="saveFree()">Notizen speichern</button><button class="success" onclick="finish6()">Forschungsbericht abschließen</button><p id="freeFeedback"></p></div>
+${done?explain("Dein Forschungsbericht","Du hast eine eigene Forschungsfrage entwickelt, einen Versuch durchgeführt und deine Beobachtungen ausgewertet. Alle sechs Missionen sind abgeschlossen!"):""}`}
+
+// Aufgabenabschluss
+function check1(){
+ const ok=document.getElementById("m1a").checked&&!document.getElementById("m1b").checked&&document.getElementById("m1c").checked&&!document.getElementById("m1d").checked;
+ const note=document.getElementById("m1note").value.trim();
+ if(!ok||note.length<5){document.getElementById("f1").textContent="Überprüfe deine Auswahl und notiere eine Vermutung.";return}
+ state.notes[1]=note;complete(1);
 }
-function missionSix(done) {
-return `
-<h2>Mission 6 – Freie Forschungsmission 🧑‍🔬</h2>
-<div class="panel">
-<p>Du bist jetzt selbst die Forscherin oder der Forscher. Entwickle eine eigene
-Fragestellung und baue einen Versuchsaufbau.</p>
-<p>Du kannst Spiegel und Linsen verschieben und drehen. Beobachte, wie sich
-der Lichtweg verändert.</p>
-</div>
-<div class="panel">
-<div class="actions">
-<button onclick="addObject('mirror')">+ Spiegel</button>
-<button onclick="addObject('lens')">+ Sammellinse</button>
-<button onclick="addObject('diverging')">+ Zerstreuungslinse</button>
-<button onclick="addObject('block')">+ Glasblock</button>
-<button onclick="rotateSelected(-10)">↶ Drehen</button>
-<button onclick="rotateSelected(10)">↷ Drehen</button>
-<button onclick="resetLab()">Neu aufbauen</button>
-</div>
-<div id="freeCanvasWrap"></div>
-<label>Meine Forschungsfrage</label>
-<textarea id="freeQuestion" placeholder="Ich möchte herausfinden, ob ..."></textarea>
-<label>Mein Versuchsaufbau und meine Beobachtungen</label>
-<textarea id="freeObservation" placeholder="Ich habe ... verändert und beobachtet ..."></textarea>
-<label>Meine Erklärung</label>
-<textarea id="freeConclusion" placeholder="Ich erkläre das so ..."></textarea>
-<button class="primary" onclick="saveFreeNotes()">Notizen speichern</button>
-<button class="success" onclick="finishFreeMission()">Forschungsbericht abschließen</button>
-<div id="freeFeedback"></div>
-</div>
-${done?explanation("Dein Forschungsbericht",
-"Du hast eine eigene Forschungsfrage entwickelt, einen Versuch durchgeführt und deine Beobachtungen ausgewertet. Damit hast du alle Missionen des Lichtlabors abgeschlossen!"):""}
-`;
+function check2(){
+ const choice=document.querySelector('input[name="mat"]:checked'),note=document.getElementById("m2note").value.trim();
+ if(!choice||note.length<5){document.getElementById("f2").textContent="Wähle einen Vorgang und beschreibe deine Beobachtung.";return}
+ state.notes[2]=note;complete(2);
+}
+function restoreNotes(n){const el=document.getElementById("m"+n+"note");if(el&&state.notes[n])el.value=state.notes[n]}
+function finish3(){
+ const note=document.getElementById("m3note").value.trim();
+ if(!note||state.measurements.length<1){document.getElementById("f3").textContent="Speichere mindestens eine Messung und notiere deine Vermutung.";return}
+ state.notes[3]=note;complete(3);
+}
+function finish4(){
+ const a=document.getElementById("m4a").value.trim(),b=document.getElementById("m4b").value.trim();
+ if(a.length<8||b.length<8){document.getElementById("f4").textContent="Beschreibe beide Beobachtungen.";return}
+ state.notes[4]=[a,b];complete(4);
+}
+function finish6(){
+ const a=document.getElementById("freeQ").value.trim(),b=document.getElementById("freeO").value.trim(),c=document.getElementById("freeC").value.trim();
+ if(a.length<8||b.length<8||c.length<8){document.getElementById("freeFeedback").textContent="Bitte fülle alle drei Bereiche aus.";return}
+ state.notes.free=[a,b,c];complete(6);
 }
 
-// ---------- Gemeinsames Experimentierlabor ----------
-
-function setupLab(n) {
-  canvasMode = n===4?"refraction":n===5?"maze":n===6?"free":"reflection";
+// Canvas und optische Bauteile
+function makeCanvas(id){
+ const wrap=document.getElementById(id);if(!wrap)return;
+ wrap.innerHTML='<canvas width="900" height="500"></canvas>';
+ canvas=wrap.querySelector("canvas");ctx=canvas.getContext("2d");
+ canvas.addEventListener("pointerdown",pointerDown);
+ canvas.addEventListener("pointermove",pointerMove);
+ canvas.addEventListener("pointerup",pointerUp);
+ canvas.addEventListener("pointercancel",pointerUp);
 }
-function makeCanvas(containerId) {
-  const wrap=document.getElementById(containerId);
-  if(!wrap) return null;
-  wrap.innerHTML='<canvas width="900" height="500"></canvas>';
-  canvas=wrap.querySelector("canvas");
-  ctx=canvas.getContext("2d");
-  canvas.addEventListener("pointerdown",pointerDown);
-  canvas.addEventListener("pointermove",pointerMove);
-  canvas.addEventListener("pointerup",pointerUp);
-  canvas.addEventListener("pointercancel",pointerUp);
-  return canvas;
+function initObjects(free=false){
+ objects=free?[{type:"mirror",x:470,y:250,a:-30},{type:"lens",x:650,y:250,a:0}]:[{type:"mirror",x:480,y:250,a:-35}];
 }
-function initObjects(mode) {
-  objects=[];
-  if(mode==="reflection") objects.push({type:"mirror",x:480,y:250,a:-35});
-  if(mode==="free") objects.push(
-    {type:"mirror",x:480,y:250,a:-30},
-    {type:"lens",x:650,y:250,a:0}
-  );
+function addObject(type){
+ objects.push({type,x:440+Math.random()*100,y:180+Math.random()*140,a:0});draw();
 }
-function addObject(type) {
-  if(!objects) objects=[];
-  objects.push({type,x:430+Math.random()*100,y:180+Math.random()*140,a:0});
-  drawLab();
+function resetLab(){initObjects(mode==="free");draw()}
+function rotateSelected(d){
+ const o=selected||objects[objects.length-1];if(o){o.a+=d;draw()}
 }
-function resetLab() {
-  initObjects(canvasMode);
-  drawLab();
+function pos(e){
+ const r=canvas.getBoundingClientRect();
+ return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};
 }
-function rotateSelected(delta) {
-  if(dragObject) {
-    dragObject.a=(dragObject.a||0)+delta;
-    drawLab();
-  } else if(objects.length) {
-    objects[objects.length-1].a+=delta;
-    drawLab();
+function handle(o){const a=o.a*Math.PI/180;return{x:o.x-Math.sin(a)*48,y:o.y+Math.cos(a)*48}}
+function pointerDown(e){
+ const p=pos(e);canvas.setPointerCapture(e.pointerId);selected=null;pointerMode="";
+ for(let i=objects.length-1;i>=0;i--){
+  const o=objects[i],h=handle(o);
+  if(Math.hypot(p.x-h.x,p.y-h.y)<20){selected=o;pointerMode="rotate";break}
+  if(Math.hypot(p.x-o.x,p.y-o.y)<48){selected=o;pointerMode="move";break}
+ }
+ lastPoint=p;
+}
+function pointerMove(e){
+ if(!selected)return;const p=pos(e);
+ if(pointerMode==="move"){selected.x+=p.x-lastPoint.x;selected.y+=p.y-lastPoint.y}
+ else selected.a=Math.atan2(p.x-selected.x,-(p.y-selected.y))*180/Math.PI;
+ lastPoint=p;draw();
+}
+function pointerUp(){selected=null;pointerMode=""}
+function grid(){
+ ctx.fillStyle="#061321";ctx.fillRect(0,0,900,500);ctx.strokeStyle="#122b40";ctx.lineWidth=1;
+ for(let x=0;x<900;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,500);ctx.stroke()}
+ for(let y=0;y<500;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(900,y);ctx.stroke()}
+}
+function line(x1,y1,x2,y2,color="#ffd166",width=3){
+ ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()
+}
+function drawObject(o){
+ const a=o.a*Math.PI/180;ctx.save();ctx.translate(o.x,o.y);ctx.rotate(a);
+ if(o.type==="mirror"){
+  line(-55,0,55,0,"#9eeeff",8);line(-55,8,55,8,"#437f9b",2);
+ }else if(o.type==="block"){
+  ctx.fillStyle="rgba(100,190,255,.2)";ctx.strokeStyle="#78caff";ctx.lineWidth=3;ctx.fillRect(-55,-40,110,80);ctx.strokeRect(-55,-40,110,80);
+ }else{
+  ctx.strokeStyle=o.type==="diverging"?"#f3a4d2":"#77e0e8";ctx.lineWidth=4;ctx.beginPath();
+  if(o.type==="lens"){ctx.moveTo(0,-45);ctx.quadraticCurveTo(28,0,0,45);ctx.quadraticCurveTo(-28,0,0,-45)}
+  else{ctx.moveTo(-12,-45);ctx.quadraticCurveTo(-38,0,-12,45);ctx.lineTo(12,45);ctx.quadraticCurveTo(38,0,12,-45);ctx.closePath()}
+  ctx.stroke();
+ }
+ ctx.restore();
+ const h=handle(o);line(o.x,o.y,h.x,h.y,"#ffd166",2);ctx.fillStyle="#ffd166";ctx.beginPath();ctx.arc(h.x,h.y,9,0,Math.PI*2);ctx.fill();
+}
+function laser(){
+ ctx.fillStyle="#ff6464";ctx.beginPath();ctx.arc(55,250,12,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#fff";ctx.font="15px Arial";ctx.fillText("Lichtquelle",20,280);
+}
+function trace(){
+ let x=70,y=250,dx=1,dy=0;raySegments=[];
+ for(let step=0;step<10;step++){
+  let best=null,bestT=Infinity;
+  for(const o of objects.filter(o=>o.type==="mirror")){
+   const a=o.a*Math.PI/180,ux=Math.cos(a),uy=Math.sin(a);
+   const ax=o.x-55*ux,ay=o.y-55*uy,vx=110*ux,vy=110*uy;
+   const den=dx*vy-dy*vx;if(Math.abs(den)<1e-8)continue;
+   const t=((ax-x)*vy-(ay-y)*vx)/den,u=((ax-x)*dy-(ay-y)*dx)/den;
+   if(t>1&&u>=0&&u<=1&&t<bestT){bestT=t;best={x:x+t*dx,y:y+t*dy,o}}
   }
-}
-function pointerPosition(e) {
-  const r=canvas.getBoundingClientRect();
-  return {x:(e.clientX-r.left)*canvas.width/r.width,
-          y:(e.clientY-r.top)*canvas.height/r.height};
-}
-function handlePoint(o) {
-  const rad=(o.a||0)*Math.PI/180;
-  return {x:o.x-Math.sin(rad)*48,y:o.y+Math.cos(rad)*48};
-}
-function pointerDown(e) {
-  const p=pointerPosition(e);
-  canvas.setPointerCapture(e.pointerId);
-  dragObject=null; dragMode="";
-  for(let i=objects.length-1;i>=0;i--) {
-    const o=objects[i], h=handlePoint(o);
-    if(Math.hypot(p.x-h.x,p.y-h.y)<19) {
-      dragObject=o; dragMode="rotate"; break;
-    }
-    if(Math.hypot(p.x-o.x,p.y-o.y)<42) {
-      dragObject=o; dragMode="move"; break;
-    }
+  if(!best){
+   let t=Infinity;
+   if(dx>0)t=Math.min(t,(900-x)/dx);if(dx<0)t=Math.min(t,(0-x)/dx);
+   if(dy>0)t=Math.min(t,(500-y)/dy);if(dy<0)t=Math.min(t,(0-y)/dy);
+   raySegments.push([x,y,x+dx*t,y+dy*t]);break;
   }
-  if(dragObject) lastPointer=p;
+  raySegments.push([x,y,best.x,best.y]);
+  const a=best.o.a*Math.PI/180,nx=-Math.sin(a),ny=Math.cos(a),dot=dx*nx+dy*ny;
+  dx-=2*dot*nx;dy-=2*dot*ny;x=best.x+dx*.5;y=best.y+dy*.5;
+ }
+ raySegments.forEach(s=>line(...s,"#ffd166",3));
 }
-function pointerMove(e) {
-  if(!dragObject) return;
-  const p=pointerPosition(e);
-  if(dragMode==="move") {
-    dragObject.x+=p.x-lastPointer.x;
-    dragObject.y+=p.y-lastPointer.y;
-  } else {
-    dragObject.a=Math.atan2(p.x-dragObject.x,-(p.y-dragObject.y))*180/Math.PI;
-  }
-  lastPointer=p;
-  drawLab();
-}
-function pointerUp() { dragObject=null; dragMode=""; }
-function drawGrid() {
-  ctx.fillStyle="#061321"; ctx.fillRect(0,0,900,500);
-  ctx.strokeStyle="#122b40"; ctx.lineWidth=1;
-  for(let x=0;x<900;x+=40) {ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,500);ctx.stroke();}
-  for(let y=0;y<500;y+=40) {ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(900,y);ctx.stroke();}
-}
-function drawObject(o) {
-  const rad=(o.a||0)*Math.PI/180;
-  ctx.save(); ctx.translate(o.x,o.y); ctx.rotate(rad);
-  if(o.type==="mirror") {
-    ctx.strokeStyle="#9eeeff"; ctx.lineWidth=8;
-    ctx.beginPath();ctx.moveTo(-55,0);ctx.lineTo(55,0);ctx.stroke();
-    ctx.strokeStyle="#437f9b";ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(-55,8);ctx.lineTo(55,8);ctx.stroke();
-  } else if(o.type==="block") {
-    ctx.fillStyle="rgba(100,190,255,.2)";ctx.strokeStyle="#78caff";ctx.lineWidth=3;
-    ctx.fillRect(-55,-40,110,80);ctx.strokeRect(-55,-40,110,80);
-  } else {
-    ctx.strokeStyle=o.type==="diverging"?"#f3a4d2":"#77e0e8";
-    ctx.lineWidth=4;
-    ctx.beginPath();
-    if(o.type==="lens") {
-      ctx.moveTo(0,-45);ctx.quadraticCurveTo(28,0,0,45);
-      ctx.quadraticCurveTo(-28,0,0,-45);
-    } else {
-      ctx.moveTo(-12,-45);ctx.quadraticCurveTo(-38,0,-12,45);
-      ctx.lineTo(12,45);ctx.quadraticCurveTo(38,0,12,-45);ctx.closePath();
-    }
-    ctx.stroke();
-  }
-  ctx.restore();
-  const h=handlePoint(o);
-  ctx.strokeStyle="#ffd166";ctx.lineWidth=2;
-  ctx.beginPath();ctx.moveTo(o.x,o.y);ctx.lineTo(h.x,h.y);ctx.stroke();
-  ctx.fillStyle="#ffd166";ctx.beginPath();ctx.arc(h.x,h.y,9,0,Math.PI*2);ctx.fill();
-}
-function line(x1,y1,x2,y2,color="#ffd166",width=3) {
-  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();
-  ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
-}
-function drawLaser() {
-  ctx.fillStyle="#ff6464";ctx.beginPath();ctx.arc(55,250,12,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle="#fff";ctx.font="15px Arial";ctx.fillText("Lichtquelle",20,280);
-}
-function traceReflection() {
-  let x=70,y=250,dx=1,dy=0;
-  const segments=[];
-  for(let step=0;step<8;step++) {
-    let best=null,bestT=Infinity;
-    for(const o of objects) if(o.type==="mirror") {
-      const a=(o.a||0)*Math.PI/180;
-      const ux=Math.cos(a),uy=Math.sin(a);
-      const ax=o.x-55*ux,ay=o.y-55*uy;
-      const bx=o.x+55*ux,by=o.y+55*uy;
-      const vx=bx-ax,vy=by-ay;
-      const den=dx*vy-dy*vx;
-      if(Math.abs(den)<1e-7) continue;
-      const t=((ax-x)*vy-(ay-y)*vx)/den;
-      const u=((ax-x)*dy-(ay-y)*dx)/den;
-      if(t>1 && u>=0 && u<=1 && t<bestT) {
-        bestT=t;best={x:x+t*dx,y:y+t*dy,o};
-      }
-    }
-    if(!best) {
-      const t=Math.min((900-x)/(dx||1e-9),dx<0?(0-x)/dx:Infinity,
-                       (500-y)/(dy||1e-9),dy<0?(0-y)/dy:Infinity);
-      segments.push([x,y,x+dx*t,y+dy*t]);
-      break;
-    }
-    segments.push([x,y,best.x,best.y]);
-    const a=(best.o.a||0)*Math.PI/180;
-    const nx=-Math.sin(a),ny=Math.cos(a);
-    const dot=dx*nx+dy*ny;
-    dx=dx-2*dot*nx;dy=dy-2*dot*ny;
-    x=best.x+dx*.5;y=best.y+dy*.5;
-  }
-  segments.forEach(s=>line(...s,"#ffd166",3));
-  rayData=segments;
-  return segments;
-}
-function drawLab() {
-  if(!ctx) return;
-  drawGrid();drawLaser();
-  if(canvasMode==="refraction") {drawRefractionScene();return;}
-  traceReflection();
-  objects.forEach(drawObject);
-  ctx.fillStyle="#d7eaff";ctx.font="14px Arial";
-  ctx.fillText("Lichtstrahl",80,230);
-  const read=document.getElementById("labReadout");
-  if(read && objects.length) {
-    const m=objects.find(o=>o.type==="mirror");
-    if(m) read.textContent="Spiegelwinkel: "+Math.round(m.a)+"°. Verändere die Stellung und beobachte den reflektierten Strahl.";
-  }
+function draw(){
+ if(!ctx)return;grid();laser();trace();objects.forEach(drawObject);
+ if(current===5)checkMazeHit();
 }
 
-// ---------- Mission 3: Winkelmessung ----------
-
-function renderReflectionLab() {
-  initObjects("reflection");
-  makeCanvas("labCanvasWrap");
-  drawLab();
-  renderMeasurements();
+// Messwerte
+function saveMeasurement(){
+ const a=Number(document.getElementById("angleA").value),b=Number(document.getElementById("angleB").value);
+ if(!Number.isFinite(a)||!Number.isFinite(b)||a<0||a>90||b<0||b>90){alert("Bitte Winkel zwischen 0° und 90° eingeben.");return}
+ state.measurements.push({a,b});save();renderMeasurements();
 }
-function renderMeasurements() {
-  const el=document.getElementById("measureList");
-  if(!el)return;
-  el.innerHTML=state.measurements.map((m,i)=>
-    `<p class="small">Messung ${i+1}: Einfallswinkel ${m.a}° · Reflexionswinkel ${m.b}°</p>`
-  ).join("");
-}
-function saveMeasurement() {
-  const a=Number(document.getElementById("incidence").value);
-  const b=Number(document.getElementById("reflection").value);
-  if(!Number.isFinite(a)||!Number.isFinite(b)||a<0||a>90||b<0||b>90) {
-    alert("Bitte gib zwei Winkel zwischen 0° und 90° ein.");return;
-  }
-  state.measurements.push({a,b});
-  saveState();renderMeasurements();
-}
-function finishReflection() {
-  const h=document.getElementById("m3hyp").value.trim();
-  if(h.length<10 || state.measurements.length<1) {
-    document.getElementById("m3feedback").textContent=
-      "Bitte speichere mindestens eine Messung und notiere deine Vermutung.";
-    return;
-  }
-  state.notes[3]=h;
-  completeMission(3);
+function renderMeasurements(){
+ const el=document.getElementById("measurements");if(!el)return;
+ el.innerHTML=state.measurements.map((m,i)=>`<p class="small">Messung ${i+1}: Einfallswinkel ${m.a}° · Reflexionswinkel ${m.b}°</p>`).join("");
 }
 
-// ---------- Mission 4: Snellius ----------
-
-function setSlabAngle(d) {
-  slabAngle=Math.max(-60,Math.min(60,slabAngle+d));
-  renderRefractionLab();
+// Brechung am parallelen Glasblock nach Snellius
+function refract(dx,dy,n1,n2,nx,ny){
+ let cosi=-(dx*nx+dy*ny);
+ if(cosi<0){nx=-nx;ny=-ny;cosi=-cosi}
+ const eta=n1/n2,k=1-eta*eta*(1-cosi*cosi);
+ if(k<0)return null;
+ return{x:eta*dx+(eta*cosi-Math.sqrt(k))*nx,y:eta*dy+(eta*cosi-Math.sqrt(k))*ny};
 }
-function refract(dx,dy,n1,n2,nx,ny) {
-  // Normale zeigt in Richtung des ersten Mediums.
-  let cosi=-(dx*nx+dy*ny);
-  if(cosi<0) { nx=-nx;ny=-ny;cosi=-cosi; }
-  const eta=n1/n2;
-  const k=1-eta*eta*(1-cosi*cosi);
-  if(k<0) return null;
-  return {
-    x:eta*dx+(eta*cosi-Math.sqrt(k))*nx,
-    y:eta*dy+(eta*cosi-Math.sqrt(k))*ny
-  };
-}
-function renderRefractionLab() {
-  const c=makeCanvas("refractionCanvasWrap");
-  if(!c)return;
-  canvasMode="refraction";
-  drawRefractionScene();
-  const rad=slabAngle*Math.PI/180;
-  const incoming={x:Math.cos(rad),y:Math.sin(rad)};
-  const normal={x:-Math.sin(rad),y:Math.cos(rad)};
-  const inside=refract(incoming.x,incoming.y,1,1.5,normal.x,normal.y);
-  let text="Einfallswinkel zur Lotrechten: "+Math.abs(slabAngle)+"°.";
-  if(inside) {
-    const angle=Math.acos(Math.max(-1,Math.min(1,Math.abs(inside.x*normal.x+inside.y*normal.y))))*180/Math.PI;
-    text+=" Brechungswinkel im Glas: "+angle.toFixed(1)+"°. Der Strahl wird zum Lot hin gebrochen.";
-  }
-  document.getElementById("refractionReadout").textContent=text;
-}
-function drawRefractionScene() {
-  drawGrid();
-  const rad=slabAngle*Math.PI/180;
-  const cx=460,cy=250;
-  const ux=Math.cos(rad),uy=Math.sin(rad);
-  const nx=-uy,ny=ux;
-  const half=150;
-  const p1={x:cx-nx*half,y:cy-ny*half};
-  const p2={x:cx+nx*half,y:cy+ny*half};
-  const p3={x:p1.x+ux*130,y:p1.y+uy*130};
-  const p4={x:p2.x+ux*130,y:p2.y+uy*130};
-  ctx.fillStyle="rgba(65,160,220,.18)";
-  ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);
-  ctx.lineTo(p4.x,p4.y);ctx.lineTo(p3.x,p3.y);ctx.closePath();ctx.fill();
-  line(p1.x,p1.y,p2.x,p2.y,"#8bdcff",4);
-  line(p3.x,p3.y,p4.x,p4.y,"#8bdcff",4);
-  const start={x:cx-ux*300,y:cy-uy*300};
-  const hit={x:cx,y:cy};
-  line(start.x,start.y,hit.x,hit.y,"#ffd166",3);
-  const inside=refract(ux,uy,1,1.5,nx,ny);
-  if(inside) {
-    const exit={x:cx+ux*130,y:cy+uy*130};
-    const insideEnd={x:exit.x,y:exit.y};
-    line(hit.x,hit.y,insideEnd.x,insideEnd.y,"#ffd166",3);
-    const out=refract(inside.x,inside.y,1.5,1,-nx,-ny);
-    if(out) line(exit.x,exit.y,exit.x+out.x*260,exit.y+out.y*260,"#ffd166",3);
-  }
-  line(cx-nx*70,cy-ny*70,cx+nx*70,cy+ny*70,"#70e0a0",1);
-  ctx.fillStyle="#d7eaff";ctx.font="16px Arial";
-  ctx.fillText("Luft",70,60);ctx.fillText("Glas",cx+20,cy+35);
-  ctx.fillText("n = 1,5",cx+20,cy+55);
+function changeSlab(d){slabAngle=Math.max(-60,Math.min(60,slabAngle+d));drawRefraction()}
+function drawRefraction(){
+ if(!ctx)return;grid();
+ const a=slabAngle*Math.PI/180,ux=Math.cos(a),uy=Math.sin(a),nx=-uy,ny=ux,cx=460,cy=250,L=150;
+ const p1={x:cx-nx*L,y:cy-ny*L},p2={x:cx+nx*L,y:cy+ny*L};
+ const p3={x:p1.x+ux*130,y:p1.y+uy*130},p4={x:p2.x+ux*130,y:p2.y+uy*130};
+ ctx.fillStyle="rgba(65,160,220,.18)";ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);ctx.lineTo(p4.x,p4.y);ctx.lineTo(p3.x,p3.y);ctx.closePath();ctx.fill();
+ line(p1.x,p1.y,p2.x,p2.y,"#8bdcff",4);line(p3.x,p3.y,p4.x,p4.y,"#8bdcff",4);
+ const start={x:cx-ux*300,y:cy-uy*300};line(start.x,start.y,cx,cy);
+ const inside=refract(ux,uy,1,1.5,nx,ny);
+ if(inside){
+  const exit={x:cx+ux*130,y:cy+uy*130};line(cx,cy,exit.x,exit.y);
+  const out=refract(inside.x,inside.y,1.5,1,-nx,-ny);
+  if(out)line(exit.x,exit.y,exit.x+out.x*260,exit.y+out.y*260);
+  const angle=Math.acos(Math.min(1,Math.abs(inside.x*nx+inside.y*ny)))*180/Math.PI;
+  document.getElementById("refractionText").textContent="Einfallswinkel: "+Math.abs(slabAngle)+"°. Brechungswinkel im Glas: "+angle.toFixed(1)+"°. Beim Übergang von Luft in Glas wird der Strahl zum Lot hin gebrochen.";
+ }
+ ctx.fillStyle="#fff";ctx.font="16px Arial";ctx.fillText("Luft",60,60);ctx.fillText("Glas · n = 1,5",cx+15,cy+35);
 }
 
-// ---------- Mission 5: zehn Labyrinthe ----------
-
-const mazes = [
- {name:"1. Der erste Spiegel",angle:-20,target:[700,150],count:1,desc:"Ein Spiegel lenkt den Strahl zum Ziel."},
- {name:"2. Ein anderer Winkel",angle:20,target:[700,350],count:1,desc:"Finde eine neue Spiegelstellung."},
- {name:"3. Der lange Umweg",angle:-40,target:[700,80],count:1,desc:"Der Strahl soll weit nach oben gelenkt werden."},
- {name:"4. Zwei Spiegel",angle:30,target:[720,220],count:2,desc:"Nutze zwei Spiegel, um den Strahl umzulenken."},
- {name:"5. Die Lichtkurve",angle:-55,target:[700,420],count:2,desc:"Experimentiere mit mehreren Reflexionen."},
- {name:"6. Das Spiegel-Labyrinth",angle:45,target:[780,100],count:2,desc:"Verändere die Ausrichtung der Spiegel."},
- {name:"7. Der Glasweg",angle:0,target:[700,250],count:1,desc:"Untersuche, wie Licht an Glasflächen seine Richtung ändert." ,type:"glass"},
- {name:"8. Die Sammellinse",angle:0,target:[700,250],count:1,desc:"Untersuche, wie eine Sammellinse Licht bündelt.",type:"lens"},
- {name:"9. Spiegel und Glas",angle:-30,target:[720,330],count:2,desc:"Kombiniere Spiegel und Brechung.",type:"combo"},
- {name:"10. Die Meisterprüfung",angle:35,target:[760,130],count:3,desc:"Finde deinen eigenen Weg zum Ziel.",type:"combo"}
+// Zehn Abschluss-Labyrinthe
+const mazes=[
+ ["1. Der erste Spiegel","Lenke den Strahl zum Ziel.",1,[700,150],-20],
+ ["2. Ein anderer Winkel","Finde eine neue Spiegelstellung.",1,[700,350],20],
+ ["3. Der lange Umweg","Lenke das Licht weit nach oben.",1,[700,80],-40],
+ ["4. Zwei Spiegel","Nutze zwei Spiegel.",2,[720,220],30],
+ ["5. Die Lichtkurve","Experimentiere mit mehreren Reflexionen.",2,[700,420],-55],
+ ["6. Das Spiegel-Labyrinth","Verändere die Ausrichtung der Spiegel.",2,[780,100],45],
+ ["7. Das Glas-Labyrinth","Untersuche den Lichtweg durch Glas.",1,[700,250],0],
+ ["8. Die Sammellinse","Untersuche, wie Linsen Licht bündeln.",1,[700,250],0],
+ ["9. Spiegel und Glas","Kombiniere optische Bauteile.",2,[720,330],-30],
+ ["10. Die Meisterprüfung","Finde deinen eigenen Weg zum Ziel.",3,[760,130],35]
 ];
-function renderMaze() {
-  const i=selectedMaze, m=mazes[i];
-  if(!m)return;
-  document.getElementById("mazeTitle").innerHTML=
-    `<h3>${m.name}</h3><p>${m.desc}</p>`;
-  document.getElementById("mazeBar").style.width=
-    (state.mazeDone.length/10*100)+"%";
-  document.getElementById("mazeProgress").textContent=
-    state.mazeDone.length+" von 10 Aufgaben gelöst";
-  mazeSolved=state.mazeDone.includes(i);
-  objects=[];
-  if(m.type==="glass" || m.type==="combo") {
-    objects.push({type:"block",x:430,y:250,a:0});
-  }
-  if(m.type==="lens") objects.push({type:"lens",x:430,y:250,a:0});
-  const count=m.count;
-  for(let j=0;j<count;j++) {
-    objects.push({
-      type:"mirror",
-      x:380+j*150,
-      y:250+(j%2?90:-50),
-      a:m.angle+(j*35)
-    });
-  }
-  const c=makeCanvas("mazeCanvasWrap");
-  if(c) drawMaze();
-  document.getElementById("mazeStatus").textContent=mazeSolved?
-    "✓ Diese Aufgabe ist bereits gelöst. Du kannst sie erneut ausprobieren.":
-    "Drehe und verschiebe die Spiegel. Triff mit dem Lichtstrahl das Ziel.";
-  document.getElementById("mazeReflection").classList.toggle("hidden",!mazeSolved);
-  if(mazeSolved) restoreMazeReflection();
+function renderMaze(){
+ const m=mazes[mazeIndex];mazeSolved=state.mazeDone.includes(mazeIndex);
+ document.getElementById("mazeTitle").textContent=m[0];document.getElementById("mazeDesc").textContent=m[1];
+ document.getElementById("mazeBar").style.width=(state.mazeDone.length/10*100)+"%";
+ document.getElementById("mazeProgress").textContent=state.mazeDone.length+" von 10 Aufgaben gelöst";
+ objects=[];
+ if(mazeIndex===6||mazeIndex===8||mazeIndex===9)objects.push({type:"block",x:430,y:250,a:0});
+ if(mazeIndex===7)objects.push({type:"lens",x:430,y:250,a:0});
+ for(let j=0;j<m[2];j++)objects.push({type:"mirror",x:380+j*150,y:250+(j%2?90:-50),a:m[4]+j*35});
+ makeCanvas("mazeCanvas");draw();
+ document.getElementById("mazeStatus").textContent=mazeSolved?"✓ Bereits gelöst. Du kannst erneut experimentieren.":"Drehe und verschiebe die Spiegel. Triff das grüne Ziel.";
+ document.getElementById("mazeQuestions").classList.toggle("hidden",!mazeSolved);
+ restoreMazeQuestions();
 }
-function drawMaze() {
-  drawGrid();
-  const m=mazes[selectedMaze];
-  ctx.fillStyle="rgba(112,224,160,.2)";
-  ctx.beginPath();ctx.arc(m.target[0],m.target[1],28,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle="#70e0a0";ctx.lineWidth=4;
-  ctx.beginPath();ctx.arc(m.target[0],m.target[1],19,0,Math.PI*2);ctx.stroke();
-  ctx.fillStyle="#70e0a0";ctx.font="16px Arial";
-  ctx.fillText("ZIEL",m.target[0]-15,m.target[1]-35);
-  drawLaser();
-  traceReflection();
-  objects.forEach(drawObject);
-  checkMazeHit();
+function distance(px,py,s){
+ const [x1,y1,x2,y2]=s,dx=x2-x1,dy=y2-y1,t=Math.max(0,Math.min(1,((px-x1)*dx+(py-y1)*dy)/(dx*dx+dy*dy||1)));
+ return Math.hypot(px-x1-t*dx,py-y1-t*dy);
 }
-function checkMazeHit() {
-  const m=mazes[selectedMaze];
-  const hit=rayData.some(s=>distanceToSegment(m.target[0],m.target[1],...s)<24);
-  if(hit && !mazeSolved) {
-    mazeSolved=true;
-    document.getElementById("mazeStatus").textContent=
-      "✓ Ziel getroffen! Beantworte jetzt die Reflexionsfragen.";
-    document.getElementById("mazeReflection").classList.remove("hidden");
-  }
+function checkMazeHit(){
+ if(current!==5)return;
+ const target=mazes[mazeIndex][3],hit=raySegments.some(s=>distance(target[0],target[1],s)<24);
+ if(hit&&!mazeSolved){
+  mazeSolved=true;document.getElementById("mazeStatus").textContent="✓ Ziel getroffen! Beantworte die Reflexionsfragen.";
+  document.getElementById("mazeQuestions").classList.remove("hidden");
+ }
 }
-function distanceToSegment(px,py,x1,y1,x2,y2) {
-  const dx=x2-x1,dy=y2-y1;
-  const t=Math.max(0,Math.min(1,((px-x1)*dx+(py-y1)*dy)/(dx*dx+dy*dy||1)));
-  return Math.hypot(px-(x1+t*dx),py-(y1+t*dy));
+function previousMaze(){mazeIndex=Math.max(0,mazeIndex-1);renderMaze()}
+function nextMaze(){
+ if(!state.mazeDone.includes(mazeIndex)){alert("Schließe zuerst diese Aufgabe ab.");return}
+ if(mazeIndex<9){mazeIndex++;renderMaze()}
 }
-function pointerMove(e) {
-  if(!dragObject)return;
-  const p=pointerPosition(e);
-  if(dragMode==="move") {
-    dragObject.x+=p.x-lastPointer.x;
-    dragObject.y+=p.y-lastPointer.y;
-  } else {
-    dragObject.a=Math.atan2(p.x-dragObject.x,-(p.y-dragObject.y))*180/Math.PI;
-  }
-  lastPointer=p;
-  if(currentMission===5) drawMaze();
-  else drawLab();
+function saveMazeReflection(){
+ const vals=["q1","q2","q3","q4"].map(id=>document.getElementById(id).value.trim());
+ if(vals.some(v=>v.length<3)){alert("Bitte beantworte alle vier Fragen.");return}
+ state.notes["maze"+mazeIndex]=vals;
+ if(!state.mazeDone.includes(mazeIndex))state.mazeDone.push(mazeIndex);
+ save();
+ if(state.mazeDone.length===10)complete(5);else{document.getElementById("mazeStatus").textContent="Reflexion gespeichert. Du kannst zur nächsten Aufgabe wechseln.";renderMaze()}
 }
-function nextMaze() {
-  if(selectedMaze<9 && state.mazeDone.includes(selectedMaze)) {
-    selectedMaze++;renderMaze();
-  } else if(selectedMaze<9) {
-    alert("Schließe erst diese Aufgabe ab.");
-  }
-}
-function previousMaze() {
-  selectedMaze=Math.max(0,selectedMaze-1);renderMaze();
-}
-function resetMaze() {
-  renderMaze();
-}
-function restoreMazeReflection() {
-  const saved=state.notes["maze"+selectedMaze];
-  if(!saved)return;
-  ["mazeQ1","mazeQ2","mazeQ3","mazeQ4"].forEach((id,i)=>{
-    document.getElementById(id).value=saved[i]||"";
-  });
-}
-function saveMazeReflection() {
-  const values=["mazeQ1","mazeQ2","mazeQ3","mazeQ4"].map(id=>
-    document.getElementById(id).value.trim());
-  if(values.some(v=>v.length<3)) {
-    alert("Bitte beantworte alle vier Reflexionsfragen.");return;
-  }
-  state.notes["maze"+selectedMaze]=values;
-  if(!state.mazeDone.includes(selectedMaze)) state.mazeDone.push(selectedMaze);
-  saveState();
-  if(state.mazeDone.length===10) completeMission(5);
-  else {
-    document.getElementById("mazeStatus").textContent=
-      "Reflexion gespeichert. Du kannst zur nächsten Aufgabe wechseln.";
-    renderMaze();
-  }
+function restoreMazeQuestions(){
+ const vals=state.notes["maze"+mazeIndex];if(!vals)return;
+ ["q1","q2","q3","q4"].forEach((id,i)=>document.getElementById(id).value=vals[i]||"");
 }
 
-// ---------- Mission 6: freies Forschen ----------
-
-function renderFreeLab() {
-  initObjects("free");
-  makeCanvas("freeCanvasWrap");
-  drawLab();
-  const saved=state.notes.free||{};
-  ["freeQuestion","freeObservation","freeConclusion"].forEach((id,i)=>{
-    const el=document.getElementById(id);
-    if(el)el.value=saved[i]||"";
-  });
+// Freies Forschen
+function restoreFree(){
+ const vals=state.notes.free||[];
+ ["freeQ","freeO","freeC"].forEach((id,i)=>document.getElementById(id).value=vals[i]||"");
 }
-function saveFreeNotes() {
-  state.notes.free=[
-    document.getElementById("freeQuestion").value,
-    document.getElementById("freeObservation").value,
-    document.getElementById("freeConclusion").value
-  ];
-  saveState();
-  document.getElementById("freeFeedback").textContent="✓ Deine Notizen wurden gespeichert.";
-}
-function finishFreeMission() {
-  const values=[
-    document.getElementById("freeQuestion").value.trim(),
-    document.getElementById("freeObservation").value.trim(),
-    document.getElementById("freeConclusion").value.trim()
-  ];
-  if(values.some(v=>v.length<10)) {
-    document.getElementById("freeFeedback").textContent=
-      "Bitte fülle alle drei Bereiche mit deinen eigenen Gedanken aus.";
-    return;
-  }
-  state.notes.free=values;completeMission(6);
+function saveFree(){
+ state.notes.free=["freeQ","freeO","freeC"].map(id=>document.getElementById(id).value);
+ save();document.getElementById("freeFeedback").textContent="✓ Deine Notizen wurden gespeichert.";
 }
 
-// ---------- Mission 4 Abschluss ----------
-
-function finishRefraction() {
-  const a=document.getElementById("m4note").value.trim();
-  const b=document.getElementById("m4lens").value.trim();
-  if(a.length<10||b.length<10) {
-    document.getElementById("m4feedback").textContent=
-      "Bitte beschreibe deine Beobachtung und deine Vermutung zu Linsen.";
-    return;
-  }
-  state.notes[4]=[a,b];completeMission(4);
-}
-
-// ---------- Navigation und Start ----------
-
-const oldPointerMove=pointerMove;
-function showMission(n) {
-  if(!unlocked(n))return;
-  currentMission=n;
-  hideSections();
-  document.getElementById("missionView").classList.remove("hidden");
-  const pages=[missionOne,missionTwo,missionThree,missionFour,missionFive,missionSix];
-  document.getElementById("missionContent").innerHTML=pages[n-1](state.completed.includes(n));
-  if(n===1||n===2) restoreMissionNotes(n);
-  if(n===3) {canvasMode="reflection";renderReflectionLab();}
-  if(n===4) {canvasMode="refraction";renderRefractionLab();}
-  if(n===5) {canvasMode="maze";selectedMaze=0;renderMaze();}
-  if(n===6) {canvasMode="free";renderFreeLab();}
-}
-updateHeader();
-showHome();
+// Start
+updateHeader();showHome();
 </script>
 </body>
 </html>
