@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Lichtlabor – Optik entdecken</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #101c30;
+  color: white;
+}
+header {
+  padding: 18px;
+  background: #172b45;
+  text-align: center;
+}
+h1 { margin: 0; font-size: 27px; }
+main { max-width: 1100px; margin: auto; padding: 15px; }
+.panel {
+  background: #1c304c;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+button {
+  background: #176b83;
+  color: white;
+  border: 0;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 16px;
+  min-height: 48px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+button:active { background: #2499b5; }
+.tools {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 9px;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #071322;
+  border-radius: 12px;
+  touch-action: none;
+}
+p { line-height: 1.5; color: #d5e2f2; }
+@media(min-width:750px) {
+  .tools { grid-template-columns: repeat(3,1fr); }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔦 Mission Lichtlabor</h1>
+  <p>Werde zum Optik-Forscher!</p>
+</header>
+
+<main>
+  <div class="panel">
+    <h2>🧪 Dein Versuchsraum</h2>
+    <canvas id="labor" width="900" height="500"></canvas>
+  </div>
+
+  <div class="panel">
+    <h2>🧰 Optische Bauteile</h2>
+    <div class="tools">
+      <button onclick="addMirror()">Ebener Spiegel</button>
+      <button onclick="addConcave()">Hohlspiegel</button>
+      <button onclick="addConvex()">Wölbspiegel</button>
+      <button onclick="addLens()">Sammellinse</button>
+      <button onclick="addDiverging()">Zerstreuungslinse</button>
+      <button onclick="resetLab()">Neustart</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>🔎 Dein Forscherauftrag</h2>
+    <p id="task">Setze einen Spiegel ein. Beobachte, was mit dem Lichtstrahl passiert.</p>
+    <button onclick="nextTask()">Nächster Auftrag</button>
+  </div>
+</main>
+
+<script>
+const canvas = document.getElementById("labor");
+const ctx = canvas.getContext("2d");
+let parts = [];
+let task = 0;
+
+function add(type) {
+  parts.push({
+    type: type,
+    x: 450,
+    y: 250,
+    angle: 0
+  });
+  draw();
+}
+function addMirror() { add("mirror"); }
+function addConcave() { add("concave"); }
+function addConvex() { add("convex"); }
+function addLens() { add("lens"); }
+function addDiverging() { add("diverging"); }
+
+function resetLab() {
+  parts = [];
+  draw();
+}
+
+function draw() {
+  ctx.clearRect(0,0,900,500);
+  ctx.fillStyle = "#071322";
+  ctx.fillRect(0,0,900,500);
+
+  // Laserstrahl
+  ctx.strokeStyle = "#ffd166";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(50,250);
+  ctx.lineTo(850,250);
+  ctx.stroke();
+
+  // Laser
+  ctx.fillStyle = "#ff914d";
+  ctx.beginPath();
+  ctx.arc(50,250,12,0,Math.PI*2);
+  ctx.fill();
+
+  parts.forEach(p => {
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.rotate(p.angle);
+    ctx.lineWidth = 6;
+
+    if(p.type === "mirror") {
+      ctx.strokeStyle = "#62e4ff";
+      ctx.beginPath();
+      ctx.moveTo(-50,0);
+      ctx.lineTo(50,0);
+      ctx.stroke();
+    }
+    if(p.type === "concave" || p.type === "convex") {
+      ctx.strokeStyle = "#c28bff";
+      ctx.beginPath();
+      ctx.arc(0,0,45,0,Math.PI);
+      ctx.stroke();
+    }
+    if(p.type === "lens" || p.type === "diverging") {
+      ctx.strokeStyle = "#80ed99";
+      ctx.beginPath();
+      ctx.ellipse(0,0,p.type==="lens"?15:30,48,0,0,Math.PI*2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  });
+}
+
+const tasks = [
+ "Setze einen Spiegel ein. Beobachte, was mit dem Lichtstrahl passiert.",
+ "Füge einen zweiten Spiegel hinzu. Kannst du den Lichtweg umlenken?",
+ "Vergleiche einen Hohlspiegel mit einem Wölbspiegel.",
+ "Setze eine Sammellinse ein. Was passiert mit dem Licht?",
+ "Vergleiche Sammellinse und Zerstreuungslinse."
+];
+
+function nextTask() {
+  task = (task+1)%tasks.length;
+  document.getElementById("task").textContent = tasks[task];
+}
+draw();
+</script>
+</body>
+</html>
